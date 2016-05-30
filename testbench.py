@@ -3,10 +3,16 @@ from cgi import parse_header, parse_multipart
 from urlparse import parse_qs
 import argparse
 import tempfile
+import re
 
-import os
 
 defaultport = 8000
+
+# TODOs:
+# check that testdate is in appropriate date format ISO8601
+# check that phone is 12 digits of numbers
+# description is not empty
+
 
 # return None if valid
 def validatechbserver(testdate, phone, description):
@@ -17,9 +23,12 @@ def validatechbserver(testdate, phone, description):
         return "Must provide phone"
     if description is None:
         return "Must provide description"
+    if not (re.match(r'\d+', phone) and len(phone) == 12):
+        return "Phone must be 12 digits (only numbers)"
 
     return None
-	
+
+
 def gettempfile(dir):
     # file exists need a different name
     tempf = tempfile.NamedTemporaryFile(delete=False, dir=dir, suffix=".pdf")
@@ -62,12 +71,13 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header('Content-type', 'text/html')
             self.end_headers()
             self.wfile.write(errmsg)
+            return
         self.send_response(200)
         self.send_header('Content-type', 'text/html')
         self.end_headers()
         print "testdate = %s" % testdate
         print "phone = %s" % phone
-        print "description = %s" % description 
+        print "description = %s" % description
         print "File written to %s" % thetempfile
         self.wfile.write('ok')
 
