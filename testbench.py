@@ -5,24 +5,28 @@ import argparse
 import tempfile
 import re
 
-
 defaultport = 8000
 
-# TODOs:
-# check that testdate is in appropriate date format ISO8601
-# check that phone is 12 digits of numbers
-# description is not empty
+
+def validatedatetime(datetimestring):
+    if re.match(r'\d\d\d\d-\d\d-\d\dT\d\d:\d\d', datetimestring):
+        return True
+    return False
 
 
 # return None if valid
 def validatechbserver(testdate, phone, description):
     if testdate is None:
         return "Must provide testdate"
-    # TODO: more check on testdate, phone, description
+    if not validatedatetime(testdate):
+        return "Unexpected date format"
     if phone is None:
         return "Must provide phone"
     if description is None:
         return "Must provide description"
+    if description == "":
+        return "Cannot have empty description"
+
     if not (re.match(r'\d+', phone) and len(phone) == 12):
         return "Phone must be 12 digits (only numbers)"
 
