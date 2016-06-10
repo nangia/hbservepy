@@ -61,6 +61,8 @@ class Handler(BaseHTTPRequestHandler):
         testdate = postvars['testdate'][0]
         phone = postvars['phone'][0]
         description = postvars['description'][0]
+        name = postvars['name'][0]
+        email = postvars['email'][0]
         file = postvars.get('file')
         thetempfile = ""
         if file:
@@ -82,6 +84,8 @@ class Handler(BaseHTTPRequestHandler):
         print "testdate = %s" % testdate
         print "phone = %s" % phone
         print "description = %s" % description
+        print "name = %s" % name
+        print "email = %s" % email 
         print "File written to %s" % thetempfile
         self.wfile.write('ok')
 
