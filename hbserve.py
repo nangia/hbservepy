@@ -6,14 +6,17 @@ import Queue
 import threading
 from cherrypy.process.plugins import SimplePlugin
 import time
+import tempfile
 
 import re
 import os
 localDir = os.path.dirname(__file__)
 absDir = os.path.join(os.getcwd(), localDir)
+tmpDir = os.path.join(absDir, "tmp")
 
 print "localDir = %s" % localDir
 print "absDir = %s" % absDir
+
 
 
 def testlog(arg1):
@@ -94,9 +97,46 @@ def validatechbserver(testdate, phone, description):
 
     return None
 
-hbserveconf = os.path.join(os.path.dirname(__file__), 'hbserve.conf')
+hbserveconf = os.path.join(absDir, 'hbserve.conf')
 bgtask = BackgroundTaskQueue(cherrypy.engine)
 bgtask.subscribe()
+
+
+def getTempFile(dir=tmpDir):
+    return tempfile.NamedTemporaryFile(dir=dir, delete=False, suffix=".pdf")
+
+connection = None
+channel = None
+
+
+def setup_queue():
+    global connection
+    global channel
+    connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
+    print connection
+    channel = connection.channel()
+    print "channel = %r" % channel
+    channel.queue_declare(queue='hello')
+    print "Connection to rabbitmq setup"
+
+
+def cleanup_queue():
+    global connection
+    global channel
+
+    connection.close()
+    print "Connection to rabbitmq closed"
+
+
+cherrypy.engine.subscribe('start', setup_queue)
+cherrypy.engine.subscribe('exit', setup_queue)
+
+
+def pushToQueue(testdate, phone, description, name, email, filepath):
+    channel.basic_publish(exchange='',
+                          routing_key='hello',
+                          body='Hello World!')
+    print(" [x] Sent 'Hello World!'")
 
 
 class HBServe(object):
@@ -115,12 +155,17 @@ class HBServe(object):
             return err
 
         size = 0
+        thetempfile = getTempFile()
         while True:
             data = file.file.read(8192)
+            thetempfile.write(data)
             if not data:
                 break
             size += len(data)
-        bgtask.put(testlog, "hbserve called")
+        thetempfile.close()
+        # bgtask.put(testlog, "hbserve called")
+        pushToQueue(testdate, phone, description, name, email,
+                    thetempfile.name)
 
         return "%d %s %s" % (size, file.filename, file.content_type)
 
