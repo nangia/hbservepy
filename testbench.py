@@ -85,7 +85,7 @@ class Handler(BaseHTTPRequestHandler):
         print "phone = %s" % phone
         print "description = %s" % description
         print "name = %s" % name
-        print "email = %s" % email 
+        print "email = %s" % email
         print "File written to %s" % thetempfile
         self.wfile.write('ok')
 
