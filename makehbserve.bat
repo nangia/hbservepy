@@ -1,0 +1,1 @@
+pyinstaller --onefile  --version-file=hbserveversion.txt hbserve.py
