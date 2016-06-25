@@ -1,12 +1,10 @@
 import cherrypy
-import cgi
 import pika
 import msgpack
 import Queue
 import threading
 from cherrypy.process.plugins import SimplePlugin
 import time
-import tempfile
 
 import re
 import os
@@ -16,7 +14,6 @@ tmpDir = os.path.join(absDir, "tmp")
 
 print "localDir = %s" % localDir
 print "absDir = %s" % absDir
-
 
 
 def testlog(arg1):
@@ -102,9 +99,6 @@ bgtask = BackgroundTaskQueue(cherrypy.engine)
 bgtask.subscribe()
 
 
-def getTempFile(dir=tmpDir):
-    return tempfile.NamedTemporaryFile(dir=dir, delete=False, suffix=".pdf")
-
 connection = None
 channel = None
 
@@ -132,10 +126,12 @@ cherrypy.engine.subscribe('start', setup_queue)
 cherrypy.engine.subscribe('exit', setup_queue)
 
 
-def pushToQueue(testdate, phone, description, name, email, filepath):
+def pushToQueue(testdate, phone, description, name, email, fileblob):
+    packed = msgpack.packb((testdate, phone, description, name, email,
+                            fileblob))
     channel.basic_publish(exchange='',
                           routing_key='hello',
-                          body='Hello World!')
+                          body=packed)
     print(" [x] Sent 'Hello World!'")
 
 
@@ -154,21 +150,18 @@ class HBServe(object):
             cherrypy.response.status = 400
             return err
 
-        size = 0
-        thetempfile = getTempFile()
-        while True:
-            data = file.file.read(8192)
-            thetempfile.write(data)
-            if not data:
-                break
-            size += len(data)
-        thetempfile.close()
         # bgtask.put(testlog, "hbserve called")
         pushToQueue(testdate, phone, description, name, email,
-                    thetempfile.name)
+                    file.file.read())
 
-        return "%d %s %s" % (size, file.filename, file.content_type)
+        # TODO: check what testbench returns
+        return "ok"
 
 
 if __name__ == '__main__':
+    # TODO: check that the tmp directory must exist
+    # TODO: in case auto load is on, print a warning
+    # TODO: rabbitmq should be configurable
+    # TODO: send files across rabbitmq
+
     cherrypy.quickstart(HBServe(), config=hbserveconf)
