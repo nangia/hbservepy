@@ -1,6 +1,10 @@
 import pika
 import msgpack
 import tempfile
+import uploader
+import argparse
+
+
 
 connection = pika.BlockingConnection(pika.ConnectionParameters(
                'localhost'))
@@ -14,6 +18,8 @@ tmpDir = "/Users/sandeep/Documents/vartman/healthbank/hbservepy/tmp"
 def getTempFile(dir=tmpDir):
     return tempfile.NamedTemporaryFile(dir=tmpDir,
                                        delete=False, suffix=".pdf")
+userid = ""
+password = ""
 
 
 def callback(ch, method, properties, body):
@@ -23,6 +29,19 @@ def callback(ch, method, properties, body):
     tempfile.write(fileblob)
     tempfile.close()
     print testdate, phone, description, name, email, tempfile.name
+    authentication = uploader.login(userid, password)
+    retval = uploader.uploadFile(authentication, testdate, phone, description,
+                                 tempfile.name)
+    print retval
+
+
+parser = argparse.ArgumentParser(description='Process messages & upload to HB Servers')
+parser.add_argument('userid', help='Your userid')
+parser.add_argument('password', help='Your password')
+args = parser.parse_args()
+
+userid = args.userid
+password = args.password
 
 channel.basic_consume(callback,
                       queue='hello',

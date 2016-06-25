@@ -3,3 +3,4 @@ msgpack-python==0.4.7
 pika==0.10.0
 # PyInstaller==3.2
 # pypiwin32==219
+requests==2.10.0
