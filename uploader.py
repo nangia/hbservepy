@@ -1,4 +1,5 @@
 import requests
+import logging
 
 heroku = True
 
@@ -10,7 +11,7 @@ else:
 
 def login(userid, password):
     loginurl = baseurl + "rest-auth/login/"
-    print "Trying to login"
+    logging.info("Trying to login")
     params = {
         "username": userid,
         "password": password
@@ -18,7 +19,7 @@ def login(userid, password):
     r = requests.post(loginurl, data=params)
 
     if r.status_code != 200:
-        print "Unable to login. Status=%d" % r.status_code
+        logging.error("Unable to login. Status=%d" % r.status_code)
         return None
     authentication = r.json()['key']
     return authentication
@@ -29,7 +30,7 @@ reportupload = baseurl + "reports/"
 
 
 def uploadFile(authentication, testdate, phone, description, thefile):
-    print "Trying to uploadFile"
+    logging.info("Trying to uploadFile")
     headers = {'Authorization': "Token %s" % authentication}
 
     listoffiles = [thefile]
@@ -38,11 +39,10 @@ def uploadFile(authentication, testdate, phone, description, thefile):
 
     # send a get with file having a list of files
     r = requests.get(uploadurlinfo, params=params, headers=headers)
-
-    # print "Status code for /uploadurlinfo/ is %d" % r.status_code
+    logging.debug("Status code for /uploadurlinfo/ is %d" % r.status_code)
 
     if r.status_code != 200:
-        print "Exiting as status code is not 200"
+        logging.error("uploadFile: Exiting as status code is not 200")
         return False
 
     result = r.json()
@@ -58,16 +58,16 @@ def uploadFile(authentication, testdate, phone, description, thefile):
         # as parameters
         uploadinfo.pop('url', None)
         uploadinfo.pop('file', None)
-        # print "Now uploading file %s as %s to %s" % (file, key, url)
+        logging.debug("Now uploading file %s as %s to %s" % (file, key, url))
 
         # uploadinfo now has all the parameters to be posted.
         # Not needed parameters url and file are removed from the dictionary
         # Now upload to S3
         files = {'file': open(file, 'rb')}
         r = requests.post(url, data=uploadinfo, files=files)
-        print "upload status from S3 = %d" % r.status_code
+        logging.debug("upload status from S3 = %d" % r.status_code)
         if r.status_code != 204:
-            print "Exiting as status code is not 204"
+            logging.error("uploadFile: Exiting as status code from S3 is not 204")
             return False
 
         # now make a call to /reports
@@ -77,12 +77,11 @@ def uploadFile(authentication, testdate, phone, description, thefile):
             "reports3keys": thelistofs3keys,
             "username": phone,
         }
-        # print "params = %s" % str(params)
+        logging.debug("params = %r" % str(params))
         r = requests.post(reportupload, data=params, headers=headers)
-        # print "upload status from S3 = %d" % r.status_code
-        # print r.text
-        # print "========================="
+        logging.debug("upload status from S3 = %d" % r.status_code)
+        logging.debug("Return value = %s" % r.text)
         if r.status_code == 202:
             return True
-        print "uploadFile: failure"
+        logging.error("uploadFile: failure")
         return False
