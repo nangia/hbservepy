@@ -130,7 +130,7 @@ if __name__ == '__main__':
                         default=queue_name)
     parser.add_argument('--log',
                         help="Queue name in AMQP queue",
-                        default=queue_name)
+                        default="WARN")
 
     args = parser.parse_args()
     queue_name = args.queue
