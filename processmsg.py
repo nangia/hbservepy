@@ -64,6 +64,7 @@ def process():
     connection = pika.BlockingConnection(params)
     channel = connection.channel()
     channel.queue_declare(queue=queue_name, durable=True)
+    channel.basic_qos(prefetch_count=1)
     channel.basic_consume(callback,
                           queue=queue_name)
 
