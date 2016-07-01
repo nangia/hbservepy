@@ -7,12 +7,14 @@ from cherrypy.process.plugins import SimplePlugin
 import time
 import urlparse
 import argparse
+import traceback
 
 import re
 import os
 localDir = os.path.dirname(__file__)
 absDir = os.path.join(os.getcwd(), localDir)
 tmpDir = os.path.join(absDir, "tmp")
+connectionpool = {}
 
 cherrypy.log("localDir = %s" % localDir)
 cherrypy.log("absDir = %s" % absDir)
@@ -24,7 +26,6 @@ def testlog(arg1):
 
 
 class BackgroundTaskQueue(SimplePlugin):
-
     thread = None
 
     def __init__(self, bus, qsize=100, qwait=2, safe_stop=True):
@@ -101,19 +102,15 @@ bgtask = BackgroundTaskQueue(cherrypy.engine)
 bgtask.subscribe()
 
 
-connection = None
-channel = None
 
 # url_str = "amqp://pkltrust:pkltrust1234@localhost/pkltrust/"
 url_str = "amqp://guest@localhost//"
 queue_name = "report_queue"
 
 
-def setup_queue():
-    global connection
+def setup_connection(thread_index):
     global url_str
     global queue
-    global channel
     url = urlparse.urlparse(url_str)
     password = url.password
 
@@ -131,20 +128,22 @@ def setup_queue():
     channel.queue_declare(queue=queue_name, durable=True)
     # don't hand off more than one message
     channel.basic_qos(prefetch_count=1)
-    cherrypy.log("Connection to rabbitmq setup")
+    cherrypy.thread_data.db = (connection, channel, thread_index)
+    connectionpool[thread_index] = cherrypy.thread_data.db
+    cherrypy.log("Connection to rabbitmq setup in thread %d" % thread_index)
 
 
-def cleanup_queue():
-    global connection
-    global channel
-
+def cleanup_connection(thread_index):
+    (connection, channel, index) = connectionpool[thread_index]
+    cherrypy.log("index = %d, thread_index = %d" % (index, thread_index))
     connection.close()
-    cherrypy.log("Connection to rabbitmq closed")
+    cherrypy.log("Connection to rabbitmq closed index = %d" % index)
 
 
 def pushToQueue(testdate, phone, description, name, email, fileblob):
     packed = msgpack.packb((testdate, phone, description, name, email,
                             fileblob))
+    (connection, channel, thread_index) = cherrypy.thread_data.db
     channel.basic_publish(exchange='',
                           routing_key=queue,
                           body=packed,
@@ -173,7 +172,8 @@ class HBServe(object):
             # bgtask.put(testlog, "hbserve called")
             pushToQueue(testdate, phone, description, name, email,
                         file.file.read())
-        except:
+        except Exception, err:
+            cherrypy.log(traceback.format_exc())
             cherrypy.response.status = 400
             return "Unable to enqueue"
 
@@ -192,30 +192,32 @@ if __name__ == '__main__':
     args = parser.parse_args()
     url_str = args.uri
     queue = args.queue
-    cherrypy.engine.subscribe('start', setup_queue)
-    cherrypy.engine.subscribe('exit', cleanup_queue)
+
+    cherrypy.engine.subscribe('start_thread', setup_connection)
+    cherrypy.engine.subscribe('stop_thread', cleanup_connection)
 
     cherrypy.quickstart(HBServe(), config=hbserveconf)
 
 
 
-# TODO: temp directory needs to be auto picked or exit if it does not exist
-# TODO: check that the tmp directory must exist
-
-
 
 # TODO: handle if pika connections are lost. connect again for hbserver
 
-# TODO: in case auto load is on, print a warning
-
-# TODO: same for client
-# TODO: put command line parameters to control configuration (refine it)
-
-
-
 # infinite loop that keeps starting over in case of exceptions
 
+
+# only installation check
 # TODO: include requests to be installed. check if version same on windows. otherwise upgrade
 
-# remove old pdf files after sending them successfully
+# don't care for now
+# TODO: in case auto load is on, print a warning
 
+
+
+# =======
+# Test cases:
+# in case 200 is not returned, it should try again
+# in case url is not configured in main lab app, it should not attempt to send
+# in case phone number is not configured in main lab app, it should not attempt to send
+
+# check that it first works with testbench
