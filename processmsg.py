@@ -9,18 +9,11 @@ import traceback
 import os
 import logging
 import datetime
+from logging.config import fileConfig
 
-
-def logging_info(x):
-    print x
-
-
-def logging_error(x):
-    print x
-
-
-def logging_warn(x):
-    print x
+# fileConfig('/Users/sandeep/Documents/vartman/healthbank/hbservepy/processmsg_log.ini')
+fileConfig('/Users/sandeep/Documents/vartman/healthbank/hbservepy/rhandler.ini')
+logger = logging.getLogger(__name__)
 
 
 hb_userid = ""
@@ -57,23 +50,22 @@ def processMsg(msg):
     global count
     global savedtime
     count = count + 1
-    logging_info("========Starting processing %d =========" % count)
+    logger.info("========Starting processing %d =========" % count)
     tuple = msgpack.unpackb(msg)
     (testdate, phone, description, name, email, fileblob) = tuple
-    logging_info("processMsg: processing %s for %s" % (description, phone))
+    logger.info("processMsg: processing %s for %s" % (description, phone))
     tempfile = getTempFile(tmpDirName)
     tempfile.write(fileblob)
     tempfile.close()
     fmt = "testdate=%s phone=%s description=%s name=%s email=%s file=%s"
-    logging_info(fmt % (testdate, phone, description, name, email, tempfile.name))
+    logger.info(fmt % (testdate, phone, description, name, email, tempfile.name))
     if authentication is None or ((authentication is not None) and
                                   hasThisTimeElapsed(savedtime, hours=24)):
-        logging_info("Authenticating")
-        print "Authenticating"
+        logger.info("Authenticating")
         try:
             authentication = uploader.login(hb_userid, hb_password)
         except:
-            logging_error("Authentication failed")
+            logger.error("Authentication failed")
             raise Exception("HB Authentication failed")
 
         savedtime = datetime.datetime.now()
@@ -84,7 +76,7 @@ def processMsg(msg):
         raise Exception("HB Upload failure")
     else:
         os.remove(tempfile.name)
-        logging_info("=========End processing %d ============" % count)
+        logger.info("=========End processing %d ============" % count)
 
 
 def callback(ch, method, properties, msg):
@@ -100,7 +92,7 @@ def process():
                                        credentials=credentials)
     connection = pika.BlockingConnection(params)
     channel = connection.channel()
-    print "Established connecton with rabbitmq"
+    logger.info("Established connecton with rabbitmq")
     channel.queue_declare(queue=queue_name, durable=True)
     channel.basic_qos(prefetch_count=1)
     channel.basic_consume(callback,
@@ -113,9 +105,9 @@ if __name__ == '__main__':
     executablename = os.path.realpath(__file__)
     dirname = os.path.dirname(executablename)
     tmpDir = os.path.join(dirname, tmpDirName)
-    logging_info("tmpDir = %s" % tmpDir)
+    logger.info("tmpDir = %s" % tmpDir)
     if not os.path.isdir(tmpDir) or not os.path.exists(tmpDir):
-        logging_error("%s does not exist. Exiting" % tmpDir)
+        logger.error("%s does not exist. Exiting" % tmpDir)
         exit(-1)
     logfile = os.path.join(dirname, "processmsg.log")
 
@@ -128,22 +120,24 @@ if __name__ == '__main__':
     parser.add_argument('--queue',
                         help="Queue name in AMQP queue",
                         default=queue_name)
-    parser.add_argument('--log',
-                        help="Queue name in AMQP queue",
-                        default="WARN")
+    # parser.add_argument('--log',
+    #                     help="Queue name in AMQP queue",
+    #                     default="WARN")
 
     args = parser.parse_args()
     queue_name = args.queue
     hb_userid = args.userid
     hb_password = args.password
-    loglevel = args.log
 
-    numeric_level = getattr(logging, loglevel.upper(), None)
-    if not isinstance(numeric_level, int):
-        raise ValueError('Invalid log level: %s' % loglevel)
-    print "loglevel (%s) = %d" % (loglevel, numeric_level)
-    logging.basicConfig(filename=logfile, level=numeric_level,
-                        format='%(asctime)s %(message)s')
+    # loglevel = args.log
+    # numeric_level = getattr(logger, loglevel.upper(), None)
+    # if not isinstance(numeric_level, int):
+    #     raise ValueError('Invalid log level: %s' % loglevel)
+    # print "loglevel (%s) = %d" % (loglevel, numeric_level)
+    # print "logfile = %s" % logfile
+    # logger.basicConfig(format='%(asctime)s %(levelname)s:%(message)s',
+    #                     filename=logfile, level=numeric_level)
+    # #                        format= %(message)s')
 
     url_str = args.uri
     url = urlparse.urlparse(url_str)
@@ -151,36 +145,36 @@ if __name__ == '__main__':
     rabbitmq_password = url.password
     if rabbitmq_password is None:
         rabbitmq_password = "guest"
-    timetowait = 10 * 60  # 10 minutes
+    timetowait = 5   # 10 * 60  # 10 minutes
     while True:
         try:
             authentication = None
             # now enter into regular wait for rabbitmq messages
             print('[*] Waiting for messages. To exit press CTRL+C')
-            logging_info('[*] Waiting for messages. To exit press CTRL+C')
+            logger.info('[*] Waiting for messages. To exit press CTRL+C')
 
             process()
         except KeyboardInterrupt:
+            logger.info("\nKeyboardInterrupt received: exiting")
             if connection:
                 connection.close()
                 connection = None
-            print "Closed connecton with rabbitmq"
-            logging_info("\nKeyboardInterrupt received: exiting")
+                logger.info("Closed connecton with rabbitmq")
             break
         except pika.exceptions.ConnectionClosed:
             connection = None
-            print "Exception: Rabbitmq connection got closed"
-            logging_error(traceback.format_exc())
-            logging_error("Exception received. Will start again in %d s" % timetowait)
+            logger.error("Exception: Rabbitmq connection got closed")
+            logger.error(traceback.format_exc())
+            logger.error("Exception received. Will start again in %d s" % timetowait)
             time.sleep(timetowait)            
         except Exception, err:
-            print "Generic Exception received"
+            logger.error("Generic Exception received")
             if connection:
                 connection.close()
                 connection = None
-            print "Closed connecton with rabbitmq"
-            logging_error(traceback.format_exc())
-            logging_error("Exception received. Will start again in %d s" % timetowait)
+            logger.error("Closed connecton with rabbitmq")
+            logger.error(traceback.format_exc())
+            logger.error("Exception received. Will start again in %d s" % timetowait)
             time.sleep(timetowait)
 
 
