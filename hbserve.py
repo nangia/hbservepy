@@ -14,8 +14,8 @@ localDir = os.path.dirname(__file__)
 absDir = os.path.join(os.getcwd(), localDir)
 tmpDir = os.path.join(absDir, "tmp")
 
-print "localDir = %s" % localDir
-print "absDir = %s" % absDir
+cherrypy.log("localDir = %s" % localDir)
+cherrypy.log("absDir = %s" % absDir)
 
 
 def testlog(arg1):
@@ -115,7 +115,6 @@ def setup_queue():
     global queue
     global channel
     url = urlparse.urlparse(url_str)
-    print url
     password = url.password
 
     if password is None:
@@ -128,13 +127,11 @@ def setup_queue():
 
     # params = pika.ConnectionParameters()
     connection = pika.BlockingConnection(params)
-    print connection
     channel = connection.channel()
-    print "channel = %r" % channel
     channel.queue_declare(queue=queue_name, durable=True)
     # don't hand off more than one message
     channel.basic_qos(prefetch_count=1)
-    print "Connection to rabbitmq setup"
+    cherrypy.log("Connection to rabbitmq setup")
 
 
 def cleanup_queue():
@@ -142,7 +139,7 @@ def cleanup_queue():
     global channel
 
     connection.close()
-    print "Connection to rabbitmq closed"
+    cherrypy.log("Connection to rabbitmq closed")
 
 
 def pushToQueue(testdate, phone, description, name, email, fileblob):
@@ -168,7 +165,7 @@ class HBServe(object):
         cherrypy.log("email=%s" % email)
         err = validatechbserver(testdate, phone, description)
         if err is not None:
-            print "Returning 400: err=%s" % err
+            cherrypy.log("Returning 400: err=%s" % err)
             cherrypy.response.status = 400
             return err
 
@@ -205,14 +202,9 @@ if __name__ == '__main__':
 # TODO: temp directory needs to be auto picked or exit if it does not exist
 # TODO: check that the tmp directory must exist
 
-# TODO: what if login fails
-# try not to login again
 
-# TODO: what if internet fails
 
-# logging
-
-# TODO: handle if pika connections are lost. connect again
+# TODO: handle if pika connections are lost. connect again for hbserver
 
 # TODO: in case auto load is on, print a warning
 
@@ -224,3 +216,6 @@ if __name__ == '__main__':
 # infinite loop that keeps starting over in case of exceptions
 
 # TODO: include requests to be installed. check if version same on windows. otherwise upgrade
+
+# remove old pdf files after sending them successfully
+
