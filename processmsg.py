@@ -15,12 +15,13 @@ hb_password = ""
 rabbitmq_password = ""
 url_str = "amqp://guest@localhost//"
 queue_name = "report_queue"
-tmpDir = "/Users/sandeep/Documents/vartman/healthbank/hbservepy/tmp"
+tmpDirName = "tmp"
+tmpDir = "tmp"
 # tmpMsgFile = "/Users/sandeep/Documents/vartman/healthbank/hbservepy/tmp/savedmsg.bin"
 count = 0
 
 
-def getTempFile(dir=tmpDir):
+def getTempFile(dir):
     return tempfile.NamedTemporaryFile(dir=tmpDir,
                                        delete=False, suffix=".pdf")
 
@@ -32,7 +33,7 @@ def processMsg(msg):
     tuple = msgpack.unpackb(msg)
     (testdate, phone, description, name, email, fileblob) = tuple
     print "processMsg: processing %s for %s" % (description, phone)
-    tempfile = getTempFile()
+    tempfile = getTempFile(tmpDirName)
     tempfile.write(fileblob)
     tempfile.close()
     print testdate, phone, description, name, email, tempfile.name
@@ -72,11 +73,14 @@ def process():
     channel.start_consuming()
 
 
-
 if __name__ == '__main__':
-    print "readlpath = %s" % os.path.realpath(__file__)
-    pathname = os.path.dirname(sys.argv[0])
-    print "pathname = %s" % pathname
+    executablename = os.path.realpath(__file__)
+    dirname = os.path.dirname(executablename)
+    tmpDir = os.path.join(dirname, tmpDirName)
+    print "tmpDir = %s" % tmpDir
+    if not os.path.isdir(tmpDir) or not os.path.exists(tmpDir):
+        print "%s does not exist. Exiting" % tmpDir
+        exit(-1)
     parser = argparse.ArgumentParser(description='Process messages & upload to HB Servers')
     parser.add_argument('userid', help='Your HB userid')
     parser.add_argument('password', help='Your HB password')
