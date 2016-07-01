@@ -161,12 +161,22 @@ if __name__ == '__main__':
 
             process()
         except KeyboardInterrupt:
-            connection.close()
+            if connection:
+                connection.close()
+                connection = None
             print "Closed connecton with rabbitmq"
             logging_info("\nKeyboardInterrupt received: exiting")
             break
+        except pika.exceptions.ConnectionClosed:
+            connection = None
+            print "Exception: Rabbitmq connection got closed"
+            logging_error(traceback.format_exc())
+            logging_error("Exception received. Will start again in %d s" % timetowait)
+            time.sleep(timetowait)            
         except Exception, err:
-            connection.close()
+            if connection:
+                connection.close()
+                connection = None
             print "Closed connecton with rabbitmq"
             logging_error(traceback.format_exc())
             logging_error("Exception received. Will start again in %d s" % timetowait)
@@ -178,3 +188,9 @@ if __name__ == '__main__':
 # TODO: what if internet fails
 
 # version numbers to be done appropriately
+
+
+# what if connection to rabbitmq fails
+
+
+# no need to establish connection again and again to rabbitmq, if available reuse
