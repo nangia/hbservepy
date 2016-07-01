@@ -174,6 +174,7 @@ if __name__ == '__main__':
             logging_error("Exception received. Will start again in %d s" % timetowait)
             time.sleep(timetowait)            
         except Exception, err:
+            print "Generic Exception received"
             if connection:
                 connection.close()
                 connection = None
@@ -185,12 +186,6 @@ if __name__ == '__main__':
 
 # TODO: logging
 
-# TODO: what if internet fails
-
 # version numbers to be done appropriately
 
 
-# what if connection to rabbitmq fails
-
-
-# no need to establish connection again and again to rabbitmq, if available reuse
