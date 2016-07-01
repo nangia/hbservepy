@@ -17,7 +17,6 @@ url_str = "amqp://guest@localhost//"
 queue_name = "report_queue"
 tmpDirName = "tmp"
 tmpDir = "tmp"
-# tmpMsgFile = "/Users/sandeep/Documents/vartman/healthbank/hbservepy/tmp/savedmsg.bin"
 count = 0
 
 
@@ -50,12 +49,7 @@ def processMsg(msg):
 
 
 def callback(ch, method, properties, msg):
-    # save msg to a specific file
-    # with open(tmpMsgFile, 'wb') as f:
-    #     f.write(msg)
     processMsg(msg)
-    # if dont' get an exception delete file
-    # os.remove(tmpMsgFile)
     ch.basic_ack(delivery_tag=method.delivery_tag)
 
 
@@ -106,13 +100,6 @@ if __name__ == '__main__':
     timetowait = 5
     while True:
         try:
-            # if os.path.isfile(tmpMsgFile):
-            #     print "Processed saved message"
-            #     with open(tmpMsgFile, 'rb') as f:
-            #         processMsg(f.read())
-            #     # successful so remove old message
-            #     os.remove(tmpMsgFile)
-
             # now enter into regular wait for rabbitmq messages
             print(' [*] Waiting for messages. To exit press CTRL+C')
 
@@ -130,7 +117,6 @@ if __name__ == '__main__':
 
 # logging
 # TODO: what if login fails
-
 
 
 # TOOD: print what kind of exception and log it
