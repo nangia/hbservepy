@@ -132,6 +132,8 @@ def setup_queue():
     channel = connection.channel()
     print "channel = %r" % channel
     channel.queue_declare(queue=queue_name, durable=True)
+    # don't hand off more than one message
+    channel.basic_qos(prefetch_count=1)
     print "Connection to rabbitmq setup"
 
 
