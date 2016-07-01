@@ -7,6 +7,7 @@ import urlparse
 import time
 import traceback
 import os
+import sys
 
 
 hb_userid = ""
@@ -71,7 +72,11 @@ def process():
     channel.start_consuming()
 
 
+
 if __name__ == '__main__':
+    print "readlpath = %s" % os.path.realpath(__file__)
+    pathname = os.path.dirname(sys.argv[0])
+    print "pathname = %s" % pathname
     parser = argparse.ArgumentParser(description='Process messages & upload to HB Servers')
     parser.add_argument('userid', help='Your HB userid')
     parser.add_argument('password', help='Your HB password')
@@ -129,3 +134,6 @@ if __name__ == '__main__':
 # a key from rabbitmq, it is not uploaded at all
 
 # logging
+
+
+# don't login repeatedly unnecessarily - perhaps login at the start of loop (which gets reiniaited after exception)

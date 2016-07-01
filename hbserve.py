@@ -201,22 +201,26 @@ if __name__ == '__main__':
     cherrypy.quickstart(HBServe(), config=hbserveconf)
 
 
+
+# TODO: temp directory needs to be auto picked or exit if it does not exist
 # TODO: check that the tmp directory must exist
-# TODO: in case auto load is on, print a warning
-
-# TODO: handle if pika connections are lost. connect again
-# TODO: same for client
-# TODO: put command line parameters to control configuration
-# TODO: include requests to be installed. check if version same on windows. otherwise upgrade
-
 
 # TODO: what if login fails
+# try not to login again
 
 # TODO: what if internet fails
 
-# infinite loop that keeps starting over in case of exceptions
-
 # logging
 
+# TODO: handle if pika connections are lost. connect again
 
-# TODO: temp directory needs to be auto picked
+# TODO: in case auto load is on, print a warning
+
+# TODO: same for client
+# TODO: put command line parameters to control configuration (refine it)
+
+
+
+# infinite loop that keeps starting over in case of exceptions
+
+# TODO: include requests to be installed. check if version same on windows. otherwise upgrade
