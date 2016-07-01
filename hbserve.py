@@ -5,6 +5,8 @@ import Queue
 import threading
 from cherrypy.process.plugins import SimplePlugin
 import time
+import urlparse
+import argparse
 
 import re
 import os
@@ -102,15 +104,34 @@ bgtask.subscribe()
 connection = None
 channel = None
 
+# url_str = "amqp://pkltrust:pkltrust1234@localhost/pkltrust/"
+url_str = "amqp://guest@localhost//"
+queue_name = "report_queue"
+
 
 def setup_queue():
     global connection
+    global url_str
+    global queue
     global channel
-    connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
+    url = urlparse.urlparse(url_str)
+    print url
+    password = url.password
+
+    if password is None:
+        password = "guest"
+    credentials = pika.PlainCredentials(url.username, password)
+
+    params = pika.ConnectionParameters(host=url.hostname,
+                                       virtual_host=url.path[1:],
+                                       credentials=credentials)
+
+    # params = pika.ConnectionParameters()
+    connection = pika.BlockingConnection(params)
     print connection
     channel = connection.channel()
     print "channel = %r" % channel
-    channel.queue_declare(queue='hello')
+    channel.queue_declare(queue=queue_name, durable=True)
     print "Connection to rabbitmq setup"
 
 
@@ -122,17 +143,15 @@ def cleanup_queue():
     print "Connection to rabbitmq closed"
 
 
-cherrypy.engine.subscribe('start', setup_queue)
-cherrypy.engine.subscribe('exit', setup_queue)
-
-
 def pushToQueue(testdate, phone, description, name, email, fileblob):
     packed = msgpack.packb((testdate, phone, description, name, email,
                             fileblob))
     channel.basic_publish(exchange='',
-                          routing_key='hello',
-                          body=packed)
-    print(" [x] Sent 'Hello World!'")
+                          routing_key=queue,
+                          body=packed,
+                          properties=pika.BasicProperties(
+                              delivery_mode=2,  # make message persistent
+                          ))
 
 
 class HBServe(object):
@@ -147,21 +166,55 @@ class HBServe(object):
         cherrypy.log("email=%s" % email)
         err = validatechbserver(testdate, phone, description)
         if err is not None:
+            print "Returning 400: err=%s" % err
             cherrypy.response.status = 400
             return err
 
-        # bgtask.put(testlog, "hbserve called")
-        pushToQueue(testdate, phone, description, name, email,
-                    file.file.read())
+        try:
+            # bgtask.put(testlog, "hbserve called")
+            pushToQueue(testdate, phone, description, name, email,
+                        file.file.read())
+        except:
+            cherrypy.response.status = 400
+            return "Unable to enqueue"
 
-        # TODO: check what testbench returns
         return "ok"
 
 
 if __name__ == '__main__':
-    # TODO: check that the tmp directory must exist
-    # TODO: in case auto load is on, print a warning
-    # TODO: rabbitmq should be configurable
-    # TODO: send files across rabbitmq
+    parser = argparse.ArgumentParser("HBServe: Intermediary for Health Bank")
+    parser.add_argument('--uri',
+                        help="URI for AMQP queue",
+                        default=url_str)
+    parser.add_argument('--queue',
+                        help="Queue name in AMQP queue",
+                        default=queue_name)
+
+    args = parser.parse_args()
+    url_str = args.uri
+    queue = args.queue
+    cherrypy.engine.subscribe('start', setup_queue)
+    cherrypy.engine.subscribe('exit', cleanup_queue)
 
     cherrypy.quickstart(HBServe(), config=hbserveconf)
+
+
+# TODO: check that the tmp directory must exist
+# TODO: in case auto load is on, print a warning
+
+# TODO: handle if pika connections are lost. connect again
+# TODO: same for client
+# TODO: put command line parameters to control configuration
+# TODO: include requests to be installed. check if version same on windows. otherwise upgrade
+
+
+# TODO: what if login fails
+
+# TODO: what if internet fails
+
+# infinite loop that keeps starting over in case of exceptions
+
+# logging
+
+
+# TODO: temp directory needs to be auto picked
