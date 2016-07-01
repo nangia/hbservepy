@@ -72,13 +72,11 @@ def uploadFile(authentication, testdate, phone, description, thefile):
 
         # now make a call to /reports
         params = {
-            "dateofreport": "2016-04-10T05:30",
-            "description": "Test report via direct upload to S3",
+            "dateofreport": testdate,
+            "description": description,
             "reports3keys": thelistofs3keys,
-            "username": "919872882112"
+            "username": phone,
         }
-        params["description"] = "Report upload"
-        params["dateofreport"] = "2015-05-10T05:30"
         # print "params = %s" % str(params)
         r = requests.post(reportupload, data=params, headers=headers)
         # print "upload status from S3 = %d" % r.status_code
