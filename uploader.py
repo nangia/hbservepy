@@ -2,6 +2,7 @@ import requests
 import logging
 
 heroku = True
+timeout = 30  # 30 s
 
 if heroku:
     baseurl = "https://hbank.herokuapp.com/api/v1/"
@@ -16,7 +17,7 @@ def login(userid, password):
         "username": userid,
         "password": password
     }
-    r = requests.post(loginurl, data=params)
+    r = requests.post(loginurl, data=params, timeout=timeout)
 
     if r.status_code != 200:
         logging.error("Unable to login. Status=%d" % r.status_code)
@@ -38,7 +39,8 @@ def uploadFile(authentication, testdate, phone, description, thefile):
     params['file'] = listoffiles
 
     # send a get with file having a list of files
-    r = requests.get(uploadurlinfo, params=params, headers=headers)
+    r = requests.get(uploadurlinfo, params=params, headers=headers,
+                     timeout=timeout)
     logging.debug("Status code for /uploadurlinfo/ is %d" % r.status_code)
 
     if r.status_code != 200:
@@ -64,7 +66,7 @@ def uploadFile(authentication, testdate, phone, description, thefile):
         # Not needed parameters url and file are removed from the dictionary
         # Now upload to S3
         files = {'file': open(file, 'rb')}
-        r = requests.post(url, data=uploadinfo, files=files)
+        r = requests.post(url, data=uploadinfo, files=files, timeout=timeout)
         logging.debug("upload status from S3 = %d" % r.status_code)
         if r.status_code != 204:
             logging.error("uploadFile: Exiting as status code from S3 is not 204")
@@ -78,7 +80,8 @@ def uploadFile(authentication, testdate, phone, description, thefile):
             "username": phone,
         }
         logging.debug("params = %r" % str(params))
-        r = requests.post(reportupload, data=params, headers=headers)
+        r = requests.post(reportupload, data=params, headers=headers,
+                          timeout=timeout)
         logging.debug("upload status from S3 = %d" % r.status_code)
         logging.debug("Return value = %s" % r.text)
         if r.status_code == 202:
