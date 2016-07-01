@@ -13,7 +13,7 @@ hb_userid = ""
 hb_password = ""
 rabbitmq_password = ""
 url_str = "amqp://guest@localhost//"
-queue = "reports"
+queue_name = "report_queue"
 tmpDir = "/Users/sandeep/Documents/vartman/healthbank/hbservepy/tmp"
 # tmpMsgFile = "/Users/sandeep/Documents/vartman/healthbank/hbservepy/tmp/savedmsg.bin"
 count = 0
@@ -30,6 +30,7 @@ def processMsg(msg):
     print "========Starting processing %d =========" % count
     tuple = msgpack.unpackb(msg)
     (testdate, phone, description, name, email, fileblob) = tuple
+    print "processMsg: processing %s for %s" % (description, phone)
     tempfile = getTempFile()
     tempfile.write(fileblob)
     tempfile.close()
@@ -62,9 +63,9 @@ def process():
                                        credentials=credentials)
     connection = pika.BlockingConnection(params)
     channel = connection.channel()
-    channel.queue_declare(queue=queue)
+    channel.queue_declare(queue=queue_name, durable=True)
     channel.basic_consume(callback,
-                          queue=queue)
+                          queue=queue_name)
 
     channel.start_consuming()
 
@@ -78,10 +79,10 @@ if __name__ == '__main__':
                         default=url_str)
     parser.add_argument('--queue',
                         help="Queue name in AMQP queue",
-                        default="reports")
+                        default=queue_name)
 
     args = parser.parse_args()
-    queue = args.queue
+    queue_name = args.queue
     hb_userid = args.userid
     hb_password = args.password
 
