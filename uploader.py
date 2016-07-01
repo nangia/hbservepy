@@ -8,8 +8,6 @@ else:
     baseurl = "http://localhost:8000/api/v1/"
 
 
-
-
 def login(userid, password):
     loginurl = baseurl + "rest-auth/login/"
     print "Trying to login"
@@ -31,6 +29,7 @@ reportupload = baseurl + "reports/"
 
 
 def uploadFile(authentication, testdate, phone, description, thefile):
+    print "Trying to uploadFile"
     headers = {'Authorization': "Token %s" % authentication}
 
     listoffiles = [thefile]
@@ -40,8 +39,7 @@ def uploadFile(authentication, testdate, phone, description, thefile):
     # send a get with file having a list of files
     r = requests.get(uploadurlinfo, params=params, headers=headers)
 
-    print "Status code for /uploadurlinfo/ is %d" % r.status_code
-    # print "Resulting json is %s" % r.text
+    # print "Status code for /uploadurlinfo/ is %d" % r.status_code
 
     if r.status_code != 200:
         print "Exiting as status code is not 200"
@@ -60,9 +58,7 @@ def uploadFile(authentication, testdate, phone, description, thefile):
         # as parameters
         uploadinfo.pop('url', None)
         uploadinfo.pop('file', None)
-        print "========================="
-        print "Now uploading file %s as %s to %s" % (file, key, url)
-        # print uploadinfo
+        # print "Now uploading file %s as %s to %s" % (file, key, url)
 
         # uploadinfo now has all the parameters to be posted.
         # Not needed parameters url and file are removed from the dictionary
@@ -70,13 +66,11 @@ def uploadFile(authentication, testdate, phone, description, thefile):
         files = {'file': open(file, 'rb')}
         r = requests.post(url, data=uploadinfo, files=files)
         print "upload status from S3 = %d" % r.status_code
-        print "========================="
         if r.status_code != 204:
             print "Exiting as status code is not 204"
             return False
 
         # now make a call to /reports
-        print "Now making a calling to /reports"
         params = {
             "dateofreport": "2016-04-10T05:30",
             "description": "Test report via direct upload to S3",
@@ -85,11 +79,12 @@ def uploadFile(authentication, testdate, phone, description, thefile):
         }
         params["description"] = "Report upload"
         params["dateofreport"] = "2015-05-10T05:30"
-        print "params = %s" % str(params)
+        # print "params = %s" % str(params)
         r = requests.post(reportupload, data=params, headers=headers)
-        print "upload status from S3 = %d" % r.status_code
-        print r.text
-        print "========================="
+        # print "upload status from S3 = %d" % r.status_code
+        # print r.text
+        # print "========================="
         if r.status_code == 202:
             return True
+        print "uploadFile: failure"
         return False
