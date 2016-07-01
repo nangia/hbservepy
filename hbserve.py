@@ -200,18 +200,11 @@ if __name__ == '__main__':
 
 
 
-
-# TODO: handle if pika connections are lost. connect again for hbserver
-
-# infinite loop that keeps starting over in case of exceptions
-
-
 # only installation check
 # TODO: include requests to be installed. check if version same on windows. otherwise upgrade
 
 # don't care for now
 # TODO: in case auto load is on, print a warning
-
 
 
 # =======
