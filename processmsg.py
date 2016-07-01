@@ -151,7 +151,7 @@ if __name__ == '__main__':
     rabbitmq_password = url.password
     if rabbitmq_password is None:
         rabbitmq_password = "guest"
-    timetowait = 10
+    timetowait = 10 * 60  # 10 minutes
     while True:
         try:
             authentication = None
@@ -169,25 +169,12 @@ if __name__ == '__main__':
             connection.close()
             print "Closed connecton with rabbitmq"
             logging_error(traceback.format_exc())
-            logging_error("Exception received. Starting again in %d s" % timetowait)
+            logging_error("Exception received. Will start again in %d s" % timetowait)
             time.sleep(timetowait)
-            timetowait = 2 * timetowait
 
 
 # TODO: logging
-# TODO: what if login fails
-
-# TOOD: print what kind of exception and log it
 
 # TODO: what if internet fails
-
-# infinite loop that keeps starting over in case of exceptions
-
-# In case a login failure, upload failure or exception occurs after retrieving
-# a key from rabbitmq, it is not uploaded at all
-
-
-# don't login repeatedly unnecessarily - perhaps login at the start of loop (which gets reiniaited after exception)
-
 
 # version numbers to be done appropriately
