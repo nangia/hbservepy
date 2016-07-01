@@ -10,6 +10,12 @@ import argparse
 
 import re
 import os
+localDir = os.path.dirname(__file__)
+absDir = os.path.join(os.getcwd(), localDir)
+tmpDir = os.path.join(absDir, "tmp")
+
+print "localDir = %s" % localDir
+print "absDir = %s" % absDir
 
 
 def testlog(arg1):
