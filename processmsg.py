@@ -45,6 +45,7 @@ def processMsg(msg):
     if not success:
         raise Exception("HB Upload failure")
     else:
+        os.remove(tempfile.name)
         print "=========End processing %d ============" % count
 
 
@@ -127,8 +128,12 @@ if __name__ == '__main__':
 
 
 
-# TOOD: print what kind of exception and log it
+# logging
 # TODO: what if login fails
+
+
+
+# TOOD: print what kind of exception and log it
 
 # TODO: what if internet fails
 
@@ -137,7 +142,8 @@ if __name__ == '__main__':
 # In case a login failure, upload failure or exception occurs after retrieving
 # a key from rabbitmq, it is not uploaded at all
 
-# logging
-
 
 # don't login repeatedly unnecessarily - perhaps login at the start of loop (which gets reiniaited after exception)
+
+
+# version numbers to be done appropriately
