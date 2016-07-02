@@ -98,7 +98,7 @@ def processMsg(msg):
     global count
     global savedtime
     count = count + 1
-    logger.warn("========Starting processing %d =========" % count)
+    logger.info("========Starting processing %d =========" % count)
     tuple = msgpack.unpackb(msg)
     (testdate, phone, description, name, email, fileblob) = tuple
     logger.info("processMsg: processing %s for %s" % (description, phone))
@@ -125,7 +125,8 @@ def processMsg(msg):
         raise Exception("HB Upload failure")
     else:
         os.remove(tempfile.name)
-        logger.warn("=========End processing %d  ============" % count)
+        print "Upload for %s (%s) done" % (phone, description)
+        logger.info("=========End processing %d  ============" % count)
 
 
 def callback(ch, method, properties, msg):
@@ -135,9 +136,9 @@ def callback(ch, method, properties, msg):
 
 def process():
     print('Attempting contact with rabbitmq. To exit press CTRL+C')
-    logger.warn('Attempting contact with rabbitmq. To exit press CTRL+C')
+    logger.info('Attempting contact with rabbitmq. To exit press CTRL+C')
     count = 0
-    logger.warn('Reset count to %d' % count)
+    logger.info('Reset count to %d' % count)
 
     global connection
     credentials = pika.PlainCredentials(url.username, rabbitmq_password)
@@ -153,7 +154,7 @@ def process():
                           queue=queue_name)
 
     print('Connected with rabbitmq. Waiting for reports. To exit press CTRL+C')
-    logger.warn('Connected with rabbitmq. Waiting for reports. To exit press CTRL+C')
+    logger.info('Connected with rabbitmq. Waiting for reports. To exit press CTRL+C')
 
     channel.start_consuming()
 
