@@ -9,11 +9,7 @@ import traceback
 import os
 import logging
 import datetime
-from logging.config import fileConfig
-
-# fileConfig('/Users/sandeep/Documents/vartman/healthbank/hbservepy/processmsg_log.ini')
-fileConfig('/Users/sandeep/Documents/vartman/healthbank/hbservepy/rhandler.ini')
-logger = logging.getLogger(__name__)
+from logging.config import dictConfig
 
 
 hb_userid = ""
@@ -22,12 +18,64 @@ rabbitmq_password = ""
 url_str = "amqp://guest@localhost//"
 queue_name = "report_queue"
 tmpDirName = "tmp"
-tmpDir = "tmp"
 count = 0
 
 authentication = None
 savedtime = None
 connection = None
+
+executablename = os.path.realpath(__file__)
+dirname = os.path.dirname(executablename)
+logfilename = os.path.join(dirname, 'processmsg.log')
+logging_config = dict(
+    version=1,
+    formatters={
+        'fmt': {'format':
+                '%(asctime)s:%(name)s:%(levelname)s:%(message)s'}
+    },
+    handlers={
+        'c': {'class': 'logging.StreamHandler',
+              'formatter': 'fmt',
+              'level': logging.DEBUG},
+        'f': {
+            'class': 'logging.handlers.TimedRotatingFileHandler',
+            'level': logging.DEBUG,
+            'formatter': 'fmt',
+            'filename': logfilename,
+            'when': 'midnight'
+        }
+    },
+    root={
+        'handlers': ['c', 'f'],
+        'level': logging.DEBUG,
+    },
+)
+# logconfigfile = os.path.join(dirname, 'processmsglog.ini')
+
+# if not os.path.exists(logconfigfile):
+#    print "%s does not exist. Exiting" % logconfigfile
+# fileConfig(logconfigfile)
+dictConfig(logging_config)
+
+logger = logging.getLogger()
+
+tmpDirFullPath = os.path.join(dirname, tmpDirName)
+logger.info("tmpDir = %s" % tmpDirFullPath)
+
+if not os.path.isdir(tmpDirFullPath) or not os.path.exists(tmpDirFullPath):
+    logger.error("%s does not exist. Exiting" % tmpDirFullPath)
+    exit(-1)
+# loglevel = args.log
+# numeric_level = getattr(logger, loglevel.upper(), None)
+# if not isinstance(numeric_level, int):
+#     raise ValueError('Invalid log level: %s' % loglevel)
+# print "loglevel (%s) = %d" % (loglevel, numeric_level)
+# print "logfile = %s" % logfile
+# logger.basicConfig(format='%(asctime)s %(levelname)s:%(message)s',
+#                     filename=logfile, level=numeric_level)
+# #                        format= %(message)s')
+
+
 
 
 def hasThisTimeElapsed(fromtime, hours=24):
@@ -40,8 +88,8 @@ def hasThisTimeElapsed(fromtime, hours=24):
     return False
 
 
-def getTempFile(dir):
-    return tempfile.NamedTemporaryFile(dir=tmpDir,
+def getTempFile():
+    return tempfile.NamedTemporaryFile(dir=tmpDirFullPath,
                                        delete=False, suffix=".pdf")
 
 
@@ -50,15 +98,16 @@ def processMsg(msg):
     global count
     global savedtime
     count = count + 1
-    logger.info("========Starting processing %d =========" % count)
+    logger.warn("========Starting processing %d =========" % count)
     tuple = msgpack.unpackb(msg)
     (testdate, phone, description, name, email, fileblob) = tuple
     logger.info("processMsg: processing %s for %s" % (description, phone))
-    tempfile = getTempFile(tmpDirName)
+    tempfile = getTempFile()
     tempfile.write(fileblob)
     tempfile.close()
     fmt = "testdate=%s phone=%s description=%s name=%s email=%s file=%s"
-    logger.info(fmt % (testdate, phone, description, name, email, tempfile.name))
+    logger.info(fmt % (testdate, phone, description, name, email,
+                       tempfile.name))
     if authentication is None or ((authentication is not None) and
                                   hasThisTimeElapsed(savedtime, hours=24)):
         logger.info("Authenticating")
@@ -76,7 +125,7 @@ def processMsg(msg):
         raise Exception("HB Upload failure")
     else:
         os.remove(tempfile.name)
-        logger.info("=========End processing %d ============" % count)
+        logger.warn("=========End processing %d  ============" % count)
 
 
 def callback(ch, method, properties, msg):
@@ -85,6 +134,11 @@ def callback(ch, method, properties, msg):
 
 
 def process():
+    print('Attempting contact with rabbitmq. To exit press CTRL+C')
+    logger.warn('Attempting contact with rabbitmq. To exit press CTRL+C')
+    count = 0
+    logger.warn('Reset count to %d' % count)
+
     global connection
     credentials = pika.PlainCredentials(url.username, rabbitmq_password)
     params = pika.ConnectionParameters(host=url.hostname,
@@ -98,88 +152,71 @@ def process():
     channel.basic_consume(callback,
                           queue=queue_name)
 
+    print('Connected with rabbitmq. Waiting for reports. To exit press CTRL+C')
+    logger.warn('Connected with rabbitmq. Waiting for reports. To exit press CTRL+C')
+
     channel.start_consuming()
 
 
-if __name__ == '__main__':
-    executablename = os.path.realpath(__file__)
-    dirname = os.path.dirname(executablename)
-    tmpDir = os.path.join(dirname, tmpDirName)
-    logger.info("tmpDir = %s" % tmpDir)
-    if not os.path.isdir(tmpDir) or not os.path.exists(tmpDir):
-        logger.error("%s does not exist. Exiting" % tmpDir)
-        exit(-1)
-    logfile = os.path.join(dirname, "processmsg.log")
+parser = argparse.ArgumentParser(description='Upload reports to HB Servers')
+parser.add_argument('userid', help='Your HB userid')
+parser.add_argument('password', help='Your HB password')
+parser.add_argument('--uri',
+                    help="URI for AMQP queue",
+                    default=url_str)
+parser.add_argument('--queue',
+                    help="Queue name in AMQP queue",
+                    default=queue_name)
 
-    parser = argparse.ArgumentParser(description='Process messages & upload to HB Servers')
-    parser.add_argument('userid', help='Your HB userid')
-    parser.add_argument('password', help='Your HB password')
-    parser.add_argument('--uri',
-                        help="URI for AMQP queue",
-                        default=url_str)
-    parser.add_argument('--queue',
-                        help="Queue name in AMQP queue",
-                        default=queue_name)
-    # parser.add_argument('--log',
-    #                     help="Queue name in AMQP queue",
-    #                     default="WARN")
+parser.add_argument('--timetowait',
+                    type=int,
+                    help="Time to wait before restarts in case of error (sec)",
+                    default=600)
 
-    args = parser.parse_args()
-    queue_name = args.queue
-    hb_userid = args.userid
-    hb_password = args.password
+args = parser.parse_args()
+queue_name = args.queue
+hb_userid = args.userid
+hb_password = args.password
 
-    # loglevel = args.log
-    # numeric_level = getattr(logger, loglevel.upper(), None)
-    # if not isinstance(numeric_level, int):
-    #     raise ValueError('Invalid log level: %s' % loglevel)
-    # print "loglevel (%s) = %d" % (loglevel, numeric_level)
-    # print "logfile = %s" % logfile
-    # logger.basicConfig(format='%(asctime)s %(levelname)s:%(message)s',
-    #                     filename=logfile, level=numeric_level)
-    # #                        format= %(message)s')
 
-    url_str = args.uri
-    url = urlparse.urlparse(url_str)
+url_str = args.uri
+url = urlparse.urlparse(url_str)
 
-    rabbitmq_password = url.password
-    if rabbitmq_password is None:
-        rabbitmq_password = "guest"
-    timetowait = 5   # 10 * 60  # 10 minutes
-    while True:
-        try:
-            authentication = None
-            # now enter into regular wait for rabbitmq messages
-            print('[*] Waiting for messages. To exit press CTRL+C')
-            logger.info('[*] Waiting for messages. To exit press CTRL+C')
-
-            process()
-        except KeyboardInterrupt:
-            logger.info("\nKeyboardInterrupt received: exiting")
-            if connection:
-                connection.close()
-                connection = None
-                logger.info("Closed connecton with rabbitmq")
-            break
-        except pika.exceptions.ConnectionClosed:
+rabbitmq_password = url.password
+if rabbitmq_password is None:
+    rabbitmq_password = "guest"
+timetowait = args.timetowait
+while True:
+    try:
+        authentication = None
+        # now enter into regular wait for rabbitmq messages
+        process()
+    except KeyboardInterrupt:
+        logger.error("\nKeyboardInterrupt received: exiting")
+        if connection:
+            connection.close()
             connection = None
-            logger.error("Exception: Rabbitmq connection got closed")
-            logger.error(traceback.format_exc())
-            logger.error("Exception received. Will start again in %d s" % timetowait)
-            time.sleep(timetowait)            
-        except Exception, err:
-            logger.error("Generic Exception received")
-            if connection:
-                connection.close()
-                connection = None
-            logger.error("Closed connecton with rabbitmq")
-            logger.error(traceback.format_exc())
-            logger.error("Exception received. Will start again in %d s" % timetowait)
-            time.sleep(timetowait)
+            logger.info("Closed connecton with rabbitmq")
+        break
+    except pika.exceptions.ConnectionClosed:
+        connection = None
+        logger.error("Exception: Rabbitmq connection got closed")
+        logger.error(traceback.format_exc())
+        logger.error("Exception received. Will start again in %d s" % timetowait)
+        time.sleep(timetowait)            
+    except Exception, err:
+        logger.error("Generic Exception received")
+        if connection:
+            connection.close()
+            connection = None
+        logger.error("Closed connecton with rabbitmq")
+        logger.error(traceback.format_exc())
+        logger.error("Exception received. Will start again in %d s" % timetowait)
+        time.sleep(timetowait)
 
 
 # TODO: logging
 
+# check timedhandler parameters - when does the rollover happen
+
 # version numbers to be done appropriately
-
-
