@@ -155,8 +155,8 @@ def pushToQueue(testdate, phone, description, name, email, fileblob):
 class HBServe(object):
 
     @cherrypy.expose
-    def enqueue(self, file, testdate="", phone="", description="",
-                name="", email=""):
+    def index(self, file, testdate="", phone="", description="",
+              name="", email=""):
         cherrypy.log("testdate=%s" % testdate)
         cherrypy.log("phone=%s" % phone)
         cherrypy.log("description=%s" % description)
