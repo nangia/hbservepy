@@ -1,0 +1,1 @@
+pyinstaller --onefile  --version-file=processmsgversion.txt processmsg.py
