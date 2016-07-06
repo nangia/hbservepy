@@ -100,14 +100,15 @@ def processMsg(msg):
     count = count + 1
     logger.info("========Starting processing %d =========" % count)
     tuple = msgpack.unpackb(msg)
-    (testdate, phone, description, name, email, fileblob) = tuple
+    (testdate, phone, description, name, email, fileblob, sid, pid) = tuple
     logger.info("processMsg: processing %s for %s" % (description, phone))
     tempfile = getTempFile()
     tempfile.write(fileblob)
     tempfile.close()
-    fmt = "testdate=%s phone=%s description=%s name=%s email=%s file=%s"
+    fmt = "testdate=%s phone=%s description=%s name=%s " + \
+          "email=%s file=%s sid=%s, pid=%s"
     logger.info(fmt % (testdate, phone, description, name, email,
-                       tempfile.name))
+                       tempfile.name, sid, pid))
     if authentication is None or ((authentication is not None) and
                                   hasThisTimeElapsed(savedtime, hours=24)):
         logger.info("Authenticating")
@@ -120,7 +121,7 @@ def processMsg(msg):
         savedtime = datetime.datetime.now()
 
     success = uploader.uploadFile(authentication, testdate, phone, description,
-                                  tempfile.name)
+                                  tempfile.name, sid, pid)
     if not success:
         raise Exception("HB Upload failure")
     else:

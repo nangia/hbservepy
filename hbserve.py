@@ -140,9 +140,9 @@ def cleanup_connection(thread_index):
     cherrypy.log("Connection to rabbitmq closed index = %d" % index)
 
 
-def pushToQueue(testdate, phone, description, name, email, fileblob):
+def pushToQueue(testdate, phone, description, name, email, fileblob, sid, pid):
     packed = msgpack.packb((testdate, phone, description, name, email,
-                            fileblob))
+                            fileblob, sid, pid))
     (connection, channel, thread_index) = cherrypy.thread_data.db
     channel.basic_publish(exchange='',
                           routing_key=queue,
@@ -156,12 +156,14 @@ class HBServe(object):
 
     @cherrypy.expose
     def index(self, file, testdate="", phone="", description="",
-              name="", email=""):
+              name="", email="", sid="", pid=""):
         cherrypy.log("testdate=%s" % testdate)
         cherrypy.log("phone=%s" % phone)
         cherrypy.log("description=%s" % description)
         cherrypy.log("name=%s" % name)
         cherrypy.log("email=%s" % email)
+        cherrypy.log("sid=%s" % sid)
+        cherrypy.log("pid=%s" % pid)
         err = validatechbserver(testdate, phone, description)
         if err is not None:
             cherrypy.log("Returning 400: err=%s" % err)
@@ -171,7 +173,7 @@ class HBServe(object):
         try:
             # bgtask.put(testlog, "hbserve called")
             pushToQueue(testdate, phone, description, name, email,
-                        file.file.read())
+                        file.file.read(), sid, pid)
         except Exception, err:
             cherrypy.log(traceback.format_exc())
             cherrypy.response.status = 400

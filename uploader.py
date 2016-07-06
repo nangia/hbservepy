@@ -32,7 +32,8 @@ uploadurlinfo = baseurl + "uploadurlinfo/"
 reportupload = baseurl + "reports/"
 
 
-def uploadFile(authentication, testdate, phone, description, thefile):
+def uploadFile(authentication, testdate, phone, description, thefile,
+               sid, pid):
     logger.info("Trying to uploadFile")
     headers = {'Authorization': "Token %s" % authentication}
 
