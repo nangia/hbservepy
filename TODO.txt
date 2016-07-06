@@ -3,52 +3,37 @@
 - option in testbench.exe for deliberate error (done)
 - upgrade versions for testbench.exe (done)
 
-- extra vars in sendreport.dll
-- upgrade versions for sendreport.dll
-- extra vars in sendreport.dll (sid and patientid)
-- documentation for above
+- extra vars in sendreport.dll (done)
+- upgrade versions for sendreport.dll (done)
+- extra vars in sendreport.dll (sid and patientid) (done)
+- documentation for above (done)
+- remove dist and build directories in .bat files before making build (done)
 
 
 ========
-- compute sha256 
 
+- compute sha256 in hbserve and pass it on
+- make changes in processmsg to send extra values (name, email, ssid, patientid, sha256 to server)
+- server side changes to accept 4 extra values (name, email, ssid, patientid, sha256 to server)
 
-- specify which port will connections come from in hbserve.exe
-- specify in rabbitmq that it should accept connections from which ip
+- specify which port will connections come from in hbserve.exe (reject them otherwise)
+- specify in rabbitmq that it should accept connections from which ip (reject them otherwise)
 - how to view rabbitmq queues
 - how to return the report number to image computer's program?
 
-- changes at backend for keeping extra vars (name, email, ssid, patientid)
 
-- sha256 hashing (should it be done)
-
-
-- extra vars SSID and patient id in hbserve.exe
-- extra vars SSID and patient id in processmsg.exe
-- processmsg to send 4 extra vars (name, email, ssid, patientid to server)
+- extra vars SSID and patient id in hbserve.exe (done)
+- extra vars SSID and patient id in processmsg.exe (done)
 - Auto loop of batch files
 - Auto start by putting in program start or whatever
 - Logging in hbserve (+max size of logfiles)
 - logging in processmsg.py (max size of logfiles)
 - reduce screen messages
 
+- Why pika showing up - delete dist (done)
 
-- Why pika showing up - delete dist
 
-done
-====
-remove dist and build directories in .bat files before making build
-
-use logging 
-hbserve.py:    # TODO: check that the tmp directory must exist
 hbserve.py:    # TODO: in case auto load is on, print a warning
-hbserve.py:    # TODO: rabbitmq should be configurable
-pick url for connection to rabbitmq from config file
-hbserve.py:# TODO: handle if pika connections are lost. connect again
-hbserve.py:# TODO: same for client
-hbserve.py:# TODO: put command line parameters to control configuration
-hbserve.py:# TODO: make rabbitmq parameters to be picked from configuration
-hbserve.py:# TODO: include requests to be installed. check if version same on windows. otherwise upgrade
 
-
-make sure persistence of rabbitmq is tested. e.g. what if you shut down rabbitmq in between and then start again
+good to have
+===========
