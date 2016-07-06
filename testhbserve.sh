@@ -3,7 +3,7 @@
 testprog="hbserve"
 #testprog="testbench"
 
-if [ "$testprog" == "$hbserve" ]
+if [ "$testprog" == "hbserve" ]
 then
    url="http://127.0.0.1:9090/"
 else
