@@ -6,6 +6,8 @@ import tempfile
 import re
 
 defaultport = 8000
+delibratefalure = False
+lastsuccess = False
 
 
 def validatedatetime(datetimestring):
@@ -56,6 +58,7 @@ class Handler(BaseHTTPRequestHandler):
         return postvars
 
     def do_POST(self):
+        global lastsuccess
         postvars = self.parse_POST()
         print postvars.keys()
         try:
@@ -74,6 +77,7 @@ class Handler(BaseHTTPRequestHandler):
             self.wfile.write("Must send all params")
             return
 
+
         thetempfile = ""
         if file:
             thetempfile = gettempfile(".")
@@ -88,6 +92,18 @@ class Handler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(errmsg)
             return
+        if delibratefalure:
+            if lastsuccess:
+                lastsuccess = False
+                self.send_response(500)
+                self.send_header('Content-type', 'text/html')
+                self.end_headers()
+                self.wfile.write("Deliberate failure")
+                return
+            else:
+                lastsuccess = True
+                # continue normal processing
+
         self.send_response(200)
         self.send_header('Content-type', 'text/html')
         self.end_headers()
@@ -109,7 +125,13 @@ if __name__ == "__main__":
                         type=int,
                         help=helpstr,
                         default=defaultport)
+    parser.add_argument('--errors', action='store_true',
+                        help="Will deliberately fail 1 in 2 times")
+
     args = parser.parse_args()
+    delibratefalure = args.errors
+    if delibratefalure:
+        print "Will deliberately fail for otherwise successful requests"
     try:
         server = HTTPServer(('', args.port), Handler)
         print "Server started on port %d" % args.port
