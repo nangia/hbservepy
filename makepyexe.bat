@@ -1,1 +1,0 @@
-pyinstaller --onefile  --version-file=version.txt testbench.py
