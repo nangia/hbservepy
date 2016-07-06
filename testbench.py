@@ -58,12 +58,22 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         postvars = self.parse_POST()
         print postvars.keys()
-        testdate = postvars['testdate'][0]
-        phone = postvars['phone'][0]
-        description = postvars['description'][0]
-        name = postvars['name'][0]
-        email = postvars['email'][0]
-        file = postvars.get('file')
+        try:
+            testdate = postvars['testdate'][0]
+            phone = postvars['phone'][0]
+            description = postvars['description'][0]
+            name = postvars['name'][0]
+            email = postvars['email'][0]
+            sid = postvars['sid'][0]
+            pid = postvars['pid'][0]
+            file = postvars['file']
+        except:
+            self.send_response(400)
+            self.send_header('Content-type', 'text/html')
+            self.end_headers()
+            self.wfile.write("Must send all params")
+            return
+
         thetempfile = ""
         if file:
             thetempfile = gettempfile(".")
@@ -86,6 +96,8 @@ class Handler(BaseHTTPRequestHandler):
         print "description = %s" % description
         print "name = %s" % name
         print "email = %s" % email
+        print "sid = %s" % sid
+        print "pid = %s" % pid
         print "File written to %s" % thetempfile
         self.wfile.write('ok')
 
