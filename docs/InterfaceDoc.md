@@ -13,7 +13,7 @@ Figure 1(b) explains how this will be accomplished. The reports will flow from t
 
 For development and modification purposes of the Laboratory software, we need a test bench so that independent testing can be done on the modifications of the laboratory sofware without dependence on the many components that are there in Figure 1(b). This is accomplished using testbench.exe as illustrated in Figure 1(c). The sendreport.dll will send the reports in the same manner to testbench.exe. With that the Laboratory software changes can be tested.
 
-![Figure 1](/Users/sandeep/Desktop/Documentation/diag3.png)
+![Figure 1](/Users/sandeep/Documents/vartman/healthbank/hbservepy/docs/diag3.png)
 
 Requirements for the Software at the Lab
 ===========
