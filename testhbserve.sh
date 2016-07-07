@@ -5,7 +5,7 @@ testprog="hbserve"
 
 if [ "$testprog" == "hbserve" ]
 then
-   url="http://127.0.0.1:9090/"
+   url="http://127.0.0.1:8000/"
 else
    url="http://127.0.0.1:8000/"
 fi
