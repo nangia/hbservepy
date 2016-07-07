@@ -113,9 +113,14 @@ def processMsg(msg):
                                   hasThisTimeElapsed(savedtime, hours=24)):
         logger.info("Authenticating")
         try:
+            authentication = None
             authentication = uploader.login(hb_userid, hb_password)
         except:
-            logger.error("Authentication failed")
+            logger.error("login method failed")
+            authentication = None
+            raise Exception("login method failed")
+
+        if authentication is None:
             raise Exception("HB Authentication failed")
 
         savedtime = datetime.datetime.now()
