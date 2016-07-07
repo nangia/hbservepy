@@ -33,7 +33,7 @@ reportupload = baseurl + "reports/"
 
 
 def uploadFile(authentication, testdate, phone, description, thefile,
-               sid, pid):
+               sid, pid, name, email):
     logger.info("Trying to uploadFile")
     headers = {'Authorization': "Token %s" % authentication}
 
@@ -81,6 +81,10 @@ def uploadFile(authentication, testdate, phone, description, thefile,
             "description": description,
             "reports3keys": thelistofs3keys,
             "username": phone,
+            "sid": sid,
+            "pid": pid,
+            "name": name,
+            "email": email,
         }
         logger.debug("params = %r" % str(params))
         r = requests.post(reportupload, data=params, headers=headers,

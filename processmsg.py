@@ -121,7 +121,7 @@ def processMsg(msg):
         savedtime = datetime.datetime.now()
 
     success = uploader.uploadFile(authentication, testdate, phone, description,
-                                  tempfile.name, sid, pid)
+                                  tempfile.name, sid, pid, name, email)
     if not success:
         raise Exception("HB Upload failure")
     else:
