@@ -15,6 +15,7 @@ localDir = os.path.dirname(__file__)
 absDir = os.path.join(os.getcwd(), localDir)
 tmpDir = os.path.join(absDir, "tmp")
 connectionpool = {}
+allowedsender = "127.0.0.1"
 
 cherrypy.log("localDir = %s" % localDir)
 cherrypy.log("absDir = %s" % absDir)
@@ -164,6 +165,13 @@ class HBServe(object):
         cherrypy.log("email=%s" % email)
         cherrypy.log("sid=%s" % sid)
         cherrypy.log("pid=%s" % pid)
+        senderip = cherrypy.request.remote.ip
+        cherrypy.log("remote port = %s" % senderip)
+        if senderip != allowedsenderip:
+            cherrypy.log("Returning 403 to disallowed ip %s" % senderip)
+            cherrypy.response.status = 403
+            return "Permission denied"
+
         err = validatechbserver(testdate, phone, description)
         if err is not None:
             cherrypy.log("Returning 400: err=%s" % err)
@@ -190,10 +198,14 @@ if __name__ == '__main__':
     parser.add_argument('--queue',
                         help="Queue name in AMQP queue",
                         default=queue_name)
+    parser.add_argument('--sender',
+                        help="Allower IP of sender",
+                        default="127.0.0.1")
 
     args = parser.parse_args()
     url_str = args.uri
     queue = args.queue
+    allowedsenderip = args.sender
 
     cherrypy.engine.subscribe('start_thread', setup_connection)
     cherrypy.engine.subscribe('stop_thread', cleanup_connection)
@@ -201,12 +213,6 @@ if __name__ == '__main__':
     cherrypy.quickstart(HBServe(), config=hbserveconf)
 
 
-
-# only installation check
-# TODO: include requests to be installed. check if version same on windows. otherwise upgrade
-
-# don't care for now
-# TODO: in case auto load is on, print a warning
 
 
 # =======
