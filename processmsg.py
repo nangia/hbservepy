@@ -10,6 +10,7 @@ import os
 import logging
 import datetime
 from logging.config import dictConfig
+import sys
 
 
 hb_userid = ""
@@ -64,7 +65,7 @@ logger.info("tmpDir = %s" % tmpDirFullPath)
 
 if not os.path.isdir(tmpDirFullPath) or not os.path.exists(tmpDirFullPath):
     logger.error("%s does not exist. Exiting" % tmpDirFullPath)
-    exit(-1)
+    sys.exit(-1)
 # loglevel = args.log
 # numeric_level = getattr(logger, loglevel.upper(), None)
 # if not isinstance(numeric_level, int):
