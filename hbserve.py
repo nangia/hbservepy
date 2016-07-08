@@ -103,7 +103,6 @@ bgtask = BackgroundTaskQueue(cherrypy.engine)
 bgtask.subscribe()
 
 
-
 # url_str = "amqp://pkltrust:pkltrust1234@localhost/pkltrust/"
 url_str = "amqp://guest@localhost//"
 queue_name = "report_queue"
@@ -121,36 +120,57 @@ def setup_connection(thread_index):
 
     params = pika.ConnectionParameters(host=url.hostname,
                                        virtual_host=url.path[1:],
-                                       credentials=credentials)
+                                       credentials=credentials,
+                                       heartbeat_interval=0)
 
     # params = pika.ConnectionParameters()
-    connection = pika.BlockingConnection(params)
-    channel = connection.channel()
-    channel.queue_declare(queue=queue_name, durable=True)
-    # don't hand off more than one message
-    channel.basic_qos(prefetch_count=1)
-    cherrypy.thread_data.db = (connection, channel, thread_index)
-    connectionpool[thread_index] = cherrypy.thread_data.db
-    cherrypy.log("Connection to rabbitmq setup in thread %d" % thread_index)
+    try:
+        connection = pika.BlockingConnection(params)
+        channel = connection.channel()
+        channel.queue_declare(queue=queue_name, durable=True)
+        # don't hand off more than one message
+        channel.basic_qos(prefetch_count=1)
+        cherrypy.thread_data.db = (connection, channel, thread_index)
+        connectionpool[thread_index] = cherrypy.thread_data.db
+        cherrypy.log("Connection to rabbitmq setup in thread %d" % thread_index)
+    except:
+        cherrypy.log("setup_connection: exception occured")
+        cherrypy.log(traceback.format_exc())
+        cherrypy.thread_data.db = None
+        cherrypy.engine.exit()
+        raise Exception("setup_connection: failed")
 
 
 def cleanup_connection(thread_index):
-    (connection, channel, index) = connectionpool[thread_index]
-    cherrypy.log("index = %d, thread_index = %d" % (index, thread_index))
-    connection.close()
-    cherrypy.log("Connection to rabbitmq closed index = %d" % index)
+    thetuple = connectionpool.get(thread_index)
+    if thetuple is not None:
+        (connection, channel, index) = thetuple
+        cherrypy.log("index = %d, thread_index = %d" % (index, thread_index))
+        connection.close()
+        cherrypy.log("Connection to rabbitmq closed index = %d" % index)
+    else:
+        cherrypy.log("no %d index in connectionpool" % thread_index)
 
 
 def pushToQueue(testdate, phone, description, name, email, fileblob, sid, pid):
     packed = msgpack.packb((testdate, phone, description, name, email,
                             fileblob, sid, pid))
-    (connection, channel, thread_index) = cherrypy.thread_data.db
-    channel.basic_publish(exchange='',
-                          routing_key=queue,
-                          body=packed,
-                          properties=pika.BasicProperties(
-                              delivery_mode=2,  # make message persistent
-                          ))
+    thetuple = cherrypy.thread_data.db
+    if thetuple is None:
+        raise Exception("cherrypy.thread_data.db is None")
+    (connection, channel, thread_index) = thetuple
+    print "%r %r %r" % (connection, channel, thread_index)
+    try:
+        channel.basic_publish(exchange='',
+                              routing_key=queue,
+                              body=packed,
+                              properties=pika.BasicProperties(
+                                  delivery_mode=2,  # make message persistent
+                              ))
+    except:
+        cherrypy.log("exceptions.ConnectionClosed occured")
+        cherrypy.log(traceback.format_exc())
+        raise Exception("Connection to queue failed. Please retry")
 
 
 class HBServe(object):
@@ -182,12 +202,15 @@ class HBServe(object):
             # bgtask.put(testlog, "hbserve called")
             pushToQueue(testdate, phone, description, name, email,
                         file.file.read(), sid, pid)
+            return "ok"
         except Exception, err:
+            # try setup a connection
+            # fail for now
             cherrypy.log(traceback.format_exc())
             cherrypy.response.status = 400
+            # let it die and then be started again
+            cherrypy.engine.exit()
             return "Unable to enqueue"
-
-        return "ok"
 
 
 if __name__ == '__main__':
@@ -207,10 +230,13 @@ if __name__ == '__main__':
     queue = args.queue
     allowedsenderip = args.sender
 
-    cherrypy.engine.subscribe('start_thread', setup_connection)
-    cherrypy.engine.subscribe('stop_thread', cleanup_connection)
-
-    cherrypy.quickstart(HBServe(), config=hbserveconf)
+    try:
+        cherrypy.engine.subscribe('start_thread', setup_connection)
+        cherrypy.engine.subscribe('stop_thread', cleanup_connection)
+        cherrypy.quickstart(HBServe(), config=hbserveconf)
+    except:
+        cherrypy.log("exception occured in __main__. Exiting")
+        cherrypy.engine.exit()
 
 
 
