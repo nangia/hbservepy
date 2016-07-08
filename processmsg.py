@@ -150,7 +150,8 @@ def process():
     credentials = pika.PlainCredentials(url.username, rabbitmq_password)
     params = pika.ConnectionParameters(host=url.hostname,
                                        virtual_host=url.path[1:],
-                                       credentials=credentials)
+                                       credentials=credentials,
+                                       heartbeat_interval=0)
     connection = pika.BlockingConnection(params)
     channel = connection.channel()
     logger.info("Established connecton with rabbitmq")
