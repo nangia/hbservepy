@@ -57,6 +57,15 @@ class Handler(BaseHTTPRequestHandler):
             postvars = {}
         return postvars
 
+    def response_helper(self, thetext, code):
+        response = thetext
+        self.send_response(code)
+        self.send_header('Content-type', 'text/html')
+        self.send_header('Content-length', len(response))
+        self.end_headers()
+        print response
+        self.wfile.write(response)
+
     def do_POST(self):
         global lastsuccess
         postvars = self.parse_POST()
@@ -71,12 +80,8 @@ class Handler(BaseHTTPRequestHandler):
             pid = postvars['pid'][0]
             file = postvars['file']
         except:
-            self.send_response(400)
-            self.send_header('Content-type', 'text/html')
-            self.end_headers()
-            self.wfile.write("Must send all params")
+            self.response_helper("Must send all params", 400)
             return
-
 
         thetempfile = ""
         if file:
@@ -87,26 +92,17 @@ class Handler(BaseHTTPRequestHandler):
 
         errmsg = validatechbserver(testdate, phone, description)
         if errmsg:
-            self.send_response(400)
-            self.send_header('Content-type', 'text/html')
-            self.end_headers()
-            self.wfile.write(errmsg)
+            self.response_helper(errmsg, 400)
             return
         if delibratefalure:
             if lastsuccess:
                 lastsuccess = False
-                self.send_response(500)
-                self.send_header('Content-type', 'text/html')
-                self.end_headers()
-                self.wfile.write("Deliberate failure")
+                self.response_helper("Deliberate failure", 500)
                 return
             else:
                 lastsuccess = True
                 # continue normal processing
 
-        self.send_response(200)
-        self.send_header('Content-type', 'text/html')
-        self.end_headers()
         print "testdate = %s" % testdate
         print "phone = %s" % phone
         print "description = %s" % description
@@ -115,7 +111,7 @@ class Handler(BaseHTTPRequestHandler):
         print "sid = %s" % sid
         print "pid = %s" % pid
         print "File written to %s" % thetempfile
-        self.wfile.write('ok')
+        self.response_helper('ok', 200)
 
 
 if __name__ == "__main__":
