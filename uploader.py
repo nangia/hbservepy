@@ -89,9 +89,18 @@ def uploadFile(authentication, testdate, phone, description, thefile,
         logger.debug("params = %r" % str(params))
         r = requests.post(reportupload, data=params, headers=headers,
                           timeout=timeout)
-        logger.debug("upload status from S3 = %d" % r.status_code)
+        logger.debug("upload status from post to /reports = %d" % r.status_code)
         logger.debug("Return value = %s" % r.text)
         if r.status_code == 202:
             return True
         logger.error("uploadFile: failure")
+        jsonval = r.json()
+        if 'Invalid phone' in jsonval.get('username'):
+            # irrecoverable error
+            # just log it and go forward
+            logger.error("Invalid phone=%s, sid = %s, pid = %s. Unable to upload" % (phone, sid, pid))
+            # this is invalid phone so we can't do anything
+            # say a lie that you have processed it successfully so that you get next report
+            return True
+
         return False
