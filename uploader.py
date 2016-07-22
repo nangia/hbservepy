@@ -30,6 +30,7 @@ def login(userid, password):
 
 uploadurlinfo = baseurl + "uploadurlinfo/"
 reportupload = baseurl + "reports/"
+heartbeaturl = baseurl + "heartbeat/"
 
 
 def uploadFile(authentication, testdate, phone, description, thefile,
@@ -104,3 +105,15 @@ def uploadFile(authentication, testdate, phone, description, thefile,
             return True
 
         return False
+
+
+def heartbeat(authentication):
+    params = {}
+    headers = {'Authorization': "Token %s" % authentication}
+    r = requests.get(heartbeaturl, data=params, headers=headers,
+                     timeout=timeout)
+    logger.debug("Output from heartbeat = %d" % r.status_code)
+    logger.debug("Return value = %s" % r.text)
+    if r.status_code == 200:
+        return True
+    return False
