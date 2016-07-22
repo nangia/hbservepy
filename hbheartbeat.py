@@ -82,7 +82,7 @@ parser.add_argument('--interval', type=int,
                     default=30 * 60)  # 30 minutes
 parser.add_argument('--timetowait', type=int,
                     help='Seconds after which to restart in case of error',
-                    default=300)  # 5 minutes
+                    default=5 * 60)  # 5 minutes
 
 parser.add_argument('userid', help='Your HB userid')
 parser.add_argument('password', help='Your HB password')
