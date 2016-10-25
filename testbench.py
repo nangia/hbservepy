@@ -79,6 +79,7 @@ class Handler(BaseHTTPRequestHandler):
             sid = postvars['sid'][0]
             pid = postvars['pid'][0]
             file = postvars['file']
+            labid = postvars['labid'][0]
         except:
             self.response_helper("Must send all params", 400)
             return
@@ -110,6 +111,7 @@ class Handler(BaseHTTPRequestHandler):
         print "email = %s" % email
         print "sid = %s" % sid
         print "pid = %s" % pid
+        print "labid = %s" % labid
         print "File written to %s" % thetempfile
         self.response_helper('ok', 200)
 
