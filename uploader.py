@@ -6,10 +6,7 @@ logger = logging.getLogger()
 heroku = True
 timeout = 30  # 30 s
 
-if heroku:
-    baseurl = "https://hbank.herokuapp.com/api/v1/"
-else:
-    baseurl = "http://localhost:8000/api/v1/"
+baseurl = "https://www.healthbankapp.com/api/v1/"
 
 
 def login(userid, password):
