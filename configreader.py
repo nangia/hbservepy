@@ -31,11 +31,14 @@ class ConfigReader(object):
                                                              'username'),
                                              self.config.get(section,
                                                              'password'))
-        logger.info("Stored credentials for %s" % ".".join(self.config.sections()))
+        logger.info("Stored credentials for %s" %
+                    ".".join(self.config.sections()))
 
     def getCredentials(self, labid):
         tuple = self.configstore.get(labid)
         if tuple is None:
+            logger.info("No credentials for labid=%s. Using fallback" %
+                        labid)
             return self.configstore.get("fallback")
         else:
             return tuple
