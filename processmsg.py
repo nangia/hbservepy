@@ -11,7 +11,7 @@ import logging
 import datetime
 from logging.config import dictConfig
 import sys
-
+from configreader import ConfigReader
 
 hb_userid = ""
 hb_password = ""
@@ -20,8 +20,9 @@ url_str = "amqp://guest@localhost//"
 queue_name = "report_queue"
 tmpDirName = "tmp"
 count = 0
+configreader = None
 
-authentication = None
+authmap = {}
 savedtime = None
 connection = None
 
@@ -77,8 +78,6 @@ if not os.path.isdir(tmpDirFullPath) or not os.path.exists(tmpDirFullPath):
 # #                        format= %(message)s')
 
 
-
-
 def hasThisTimeElapsed(fromtime, hours=24):
     if fromtime is None:
         return True
@@ -95,38 +94,46 @@ def getTempFile():
 
 
 def processMsg(msg):
-    global authentication
+    global authmap
     global count
     global savedtime
     count = count + 1
     logger.info("========Starting processing %d =========" % count)
     tuple = msgpack.unpackb(msg)
-    (testdate, phone, description, name, email, fileblob, sid, pid) = tuple
+    (testdate, phone, description, name, email, fileblob, sid,
+     pid, labid) = tuple
     logger.info("processMsg: processing %s for %s" % (description, phone))
     tempfile = getTempFile()
     tempfile.write(fileblob)
     tempfile.close()
     fmt = "testdate=%s phone=%s description=%s name=%s " + \
-          "email=%s file=%s sid=%s, pid=%s"
+          "email=%s file=%s sid=%s, pid=%s, labid=%s"
     logger.info(fmt % (testdate, phone, description, name, email,
-                       tempfile.name, sid, pid))
-    if authentication is None or ((authentication is not None) and
-                                  hasThisTimeElapsed(savedtime, hours=24)):
-        logger.info("Authenticating")
+                       tempfile.name, sid, pid, labid))
+    (hb_userid, hb_password) = configreader.getCredentials(labid)
+    savedauth = authmap.get(labid)
+    if savedauth is not None:
+        (authtoken, savedtime) = savedauth
+    if savedauth is None or ((savedauth is not None) and
+                             hasThisTimeElapsed(savedtime, hours=24)):
+        logger.info("Authenticating for labid=%s", labid)
         try:
-            authentication = None
-            authentication = uploader.login(hb_userid, hb_password)
+            if authmap.get(labid) is not None:
+                del authmap[labid]
+            authtoken = uploader.login(hb_userid, hb_password)
         except:
-            logger.error("login method failed")
-            authentication = None
-            raise Exception("login method failed")
+            logger.error("login method failed for labid=%s" % labid)
+            logger.error(traceback.format_exc())
+            authtoken = None
+            raise Exception("login method failed for labid=%s" % labid)
 
-        if authentication is None:
-            raise Exception("HB Authentication failed")
+        if authtoken is None:
+            raise Exception("HB Authentication failed for labid=%s" % labid)
 
         savedtime = datetime.datetime.now()
+        authmap[labid] = (authtoken, savedtime)
 
-    success = uploader.uploadFile(authentication, testdate, phone, description,
+    success = uploader.uploadFile(authtoken, testdate, phone, description,
                                   tempfile.name, sid, pid, name, email)
     if not success:
         raise Exception("HB Upload failure")
@@ -148,6 +155,7 @@ def process():
     logger.info('Reset count to %d' % count)
 
     global connection
+
     credentials = pika.PlainCredentials(url.username, rabbitmq_password)
     params = pika.ConnectionParameters(host=url.hostname,
                                        virtual_host=url.path[1:],
@@ -168,33 +176,19 @@ def process():
 
 
 parser = argparse.ArgumentParser(description='Upload reports to HB Servers')
-parser.add_argument('userid', help='Your HB userid')
-parser.add_argument('password', help='Your HB password')
-parser.add_argument('--uri',
-                    help="URI for AMQP queue",
-                    default=url_str)
-parser.add_argument('--queue',
-                    help="Queue name in AMQP queue",
-                    default=queue_name)
-
-parser.add_argument('--timetowait',
-                    type=int,
-                    help="Time to wait before restarts in case of error (sec)",
-                    default=600)
-
+parser.add_argument('configfile', help="config file")
 args = parser.parse_args()
-queue_name = args.queue
-hb_userid = args.userid
-hb_password = args.password
+configreader = ConfigReader(args.configfile)
 
+queue_name = configreader.queue
+url_str = configreader.uri
+timetowait = configreader.timetowait
 
-url_str = args.uri
 url = urlparse.urlparse(url_str)
 
 rabbitmq_password = url.password
 if rabbitmq_password is None:
     rabbitmq_password = "guest"
-timetowait = args.timetowait
 while True:
     try:
         authentication = None
@@ -211,21 +205,17 @@ while True:
         connection = None
         logger.error("Exception: Rabbitmq connection got closed")
         logger.error(traceback.format_exc())
-        logger.error("Exception received. Will start again in %d s" % timetowait)
-        time.sleep(timetowait)            
+        logger.error("Exception received. Will start again in %d s" %
+                     timetowait)
+        time.sleep(timetowait)
     except Exception, err:
         logger.error("Generic Exception received")
+        logger.error(traceback.format_exc())
         if connection:
             connection.close()
             connection = None
         logger.error("Closed connecton with rabbitmq")
         logger.error(traceback.format_exc())
-        logger.error("Exception received. Will start again in %d s" % timetowait)
+        logger.error("Exception received. Will start again in %d s" %
+                     timetowait)
         time.sleep(timetowait)
-
-
-# TODO: logging
-
-# check timedhandler parameters - when does the rollover happen
-
-# version numbers to be done appropriately

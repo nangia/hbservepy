@@ -152,9 +152,10 @@ def cleanup_connection(thread_index):
         cherrypy.log("no %d index in connectionpool" % thread_index)
 
 
-def pushToQueue(testdate, phone, description, name, email, fileblob, sid, pid):
+def pushToQueue(testdate, phone, description, name, email, fileblob, sid,
+                pid, labid):
     packed = msgpack.packb((testdate, phone, description, name, email,
-                            fileblob, sid, pid))
+                            fileblob, sid, pid, labid))
     thetuple = cherrypy.thread_data.db
     if thetuple is None:
         raise Exception("cherrypy.thread_data.db is None")
@@ -177,7 +178,7 @@ class HBServe(object):
 
     @cherrypy.expose
     def index(self, file, testdate="", phone="", description="",
-              name="", email="", sid="", pid=""):
+              name="", email="", sid="", pid="", labid=""):
         cherrypy.log("testdate=%s" % testdate)
         cherrypy.log("phone=%s" % phone)
         cherrypy.log("description=%s" % description)
@@ -185,6 +186,7 @@ class HBServe(object):
         cherrypy.log("email=%s" % email)
         cherrypy.log("sid=%s" % sid)
         cherrypy.log("pid=%s" % pid)
+        cherrypy.log("labid=%s" % labid)
         senderip = cherrypy.request.remote.ip
         cherrypy.log("remote port = %s" % senderip)
         if senderip != allowedsenderip:
@@ -201,7 +203,7 @@ class HBServe(object):
         try:
             # bgtask.put(testlog, "hbserve called")
             pushToQueue(testdate, phone, description, name, email,
-                        file.file.read(), sid, pid)
+                        file.file.read(), sid, pid, labid)
             return "ok"
         except Exception, err:
             # try setup a connection
