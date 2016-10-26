@@ -31,8 +31,8 @@ class ConfigReader(object):
                                                              'username'),
                                              self.config.get(section,
                                                              'password'))
-        logger.info("Stored credentials for %s" %
-                    ".".join(self.config.sections()))
+        logger.info("Stored info for %s section" %
+                    ",".join(self.config.sections()))
 
     def getCredentials(self, labid):
         tuple = self.configstore.get(labid)
