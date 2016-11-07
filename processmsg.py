@@ -110,7 +110,10 @@ def processMsg(msg):
           "email=%s file=%s sid=%s, pid=%s, labid=%s"
     logger.info(fmt % (testdate, phone, description, name, email,
                        tempfile.name, sid, pid, labid))
-    (hb_userid, hb_password) = configreader.getCredentials(labid)
+    (hb_userid, hb_password, enabled) = configreader.getCredentials(labid)
+    if not enabled:
+        logger.info("labid=%s not enabled. Skipping upload", labid)
+        return
     savedauth = authmap.get(labid)
     if savedauth is not None:
         (authtoken, savedtime) = savedauth

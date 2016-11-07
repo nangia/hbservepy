@@ -27,10 +27,11 @@ class ConfigReader(object):
 
         for section in self.config.sections():
             if section != "common":
-                self.configstore[section] = (self.config.get(section,
-                                                             'username'),
-                                             self.config.get(section,
-                                                             'password'))
+                self.configstore[section] = (
+                    self.config.get(section, 'username'),
+                    self.config.get(section, 'password'),
+                    self.config.getboolean(section, 'enabled')
+                )
         logger.info("Stored info for %s section" %
                     ",".join(self.config.sections()))
 
