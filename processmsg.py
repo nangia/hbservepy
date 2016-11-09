@@ -21,6 +21,7 @@ queue_name = "report_queue"
 tmpDirName = "tmp"
 count = 0
 configreader = None
+hbuploader = None
 
 authmap = {}
 savedtime = None
@@ -123,7 +124,7 @@ def processMsg(msg):
         try:
             if authmap.get(labid) is not None:
                 del authmap[labid]
-            authtoken = uploader.login(hb_userid, hb_password)
+            authtoken = hbuploader.login(hb_userid, hb_password)
         except:
             logger.error("login method failed for labid=%s" % labid)
             logger.error(traceback.format_exc())
@@ -136,8 +137,8 @@ def processMsg(msg):
         savedtime = datetime.datetime.now()
         authmap[labid] = (authtoken, savedtime)
 
-    success = uploader.uploadFile(authtoken, testdate, phone, description,
-                                  tempfile.name, sid, pid, name, email)
+    success = hbuploader.uploadFile(authtoken, testdate, phone, description,
+                                    tempfile.name, sid, pid, name, email)
     if not success:
         raise Exception("HB Upload failure")
     else:
@@ -192,6 +193,9 @@ url = urlparse.urlparse(url_str)
 rabbitmq_password = url.password
 if rabbitmq_password is None:
     rabbitmq_password = "guest"
+
+hbuploader = uploader.HBUploader(httpsproxy=configreader.httpsproxy)
+
 while True:
     try:
         authentication = None

@@ -12,6 +12,7 @@ authentication = None
 executablename = os.path.realpath(__file__)
 dirname = os.path.dirname(executablename)
 logfilename = os.path.join(dirname, 'hbheartbeat.log')
+hbuploader = None
 logging_config = dict(
     version=1,
     formatters={
@@ -59,7 +60,7 @@ def sendHeartBeat():
         logger.info("Authenticating")
         try:
             authentication = None
-            authentication = uploader.login(hb_userid, hb_password)
+            authentication = hbuploader.login(hb_userid, hb_password)
         except:
             logger.error("login method failed")
             authentication = None
@@ -70,7 +71,7 @@ def sendHeartBeat():
         logger.info("Authentication successful")
         savedtime = datetime.datetime.now()
 
-    success = uploader.heartbeat(authentication)
+    success = hbuploader.heartbeat(authentication)
     if not success:
         raise Exception("HB heartbeat failure")
     logger.info("HB heartbeat successful")
@@ -86,13 +87,17 @@ parser.add_argument('--timetowait', type=int,
 
 parser.add_argument('userid', help='Your HB userid')
 parser.add_argument('password', help='Your HB password')
+parser.add_argument('--httpsproxy', help="https proxy",
+                    default=None)
 
 args = parser.parse_args()
 hb_userid = args.userid
 hb_password = args.password
 interval = args.interval
 timetowait = args.timetowait
+httpsproxy = args.httpsproxy
 
+hbuploader = uploader.HBUploader(httpsproxy=httpsproxy)
 
 while True:
     try:

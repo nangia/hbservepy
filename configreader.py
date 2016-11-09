@@ -24,6 +24,11 @@ class ConfigReader(object):
         logger.info("uri = %s" % self.uri)
         logger.info("queue = %s" % self.queue)
         logger.info("timetowait = %s" % self.timetowait)
+        if self.config.has_option('common', 'httpsproxy'):
+            self.httpsproxy = self.config.get('common', 'httpsproxy')
+        else:
+            self.httpsproxy = None
+        logger.info("httpsproxy = %s" % self.httpsproxy)
 
         for section in self.config.sections():
             if section != "common":
@@ -44,6 +49,11 @@ class ConfigReader(object):
         else:
             return tuple
 
+    def getProxies(self):
+        if self.httpsproxy:
+            return {'https': self.httpsproxy}
+        else:
+            return None
 
 if __name__ == "__main__":
     thereader = ConfigReader("processmsg.cfg")
