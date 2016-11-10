@@ -98,10 +98,10 @@ interval = args.interval
 timetowait = args.timetowait
 httpsproxy = args.httpsproxy
 verify = args.verify
-if verify.upper() == "FALSE":
+if type(verify) == str and verify.upper() == "FALSE":
     verify = False
 
-if verify.upper() == "TRUE":
+if type(verify) == str and verify.upper() == "TRUE":
     verify = True
 
 hbuploader = uploader.HBUploader(httpsproxy=httpsproxy, verify=verify)
