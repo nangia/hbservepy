@@ -113,20 +113,21 @@ def processMsg(msg):
                        tempfile.name, sid, pid, labid))
     (hb_userid, hb_password, enabled) = configreader.getCredentials(labid)
     if not enabled:
-        logger.info("labid=%s not enabled. Skipping upload", labid)
+        logger.info("labid=%s not enabled. Skipping upload" % labid)
         return
     savedauth = authmap.get(labid)
     if savedauth is not None:
         (authtoken, savedtime) = savedauth
     if savedauth is None or ((savedauth is not None) and
                              hasThisTimeElapsed(savedtime, hours=24)):
-        logger.info("Authenticating for labid=%s", labid)
+        logger.info("Authenticating for labid=%s" % labid)
         try:
             if authmap.get(labid) is not None:
                 del authmap[labid]
             authtoken = hbuploader.login(hb_userid, hb_password)
         except:
-            logger.error("login method failed for labid=%s" % labid)
+            logger.error("login method failed labid=%s userid=%s" %
+                         (labid, hb_userid))
             logger.error(traceback.format_exc())
             authtoken = None
             raise Exception("login method failed for labid=%s" % labid)
@@ -187,14 +188,15 @@ configreader = ConfigReader(args.configfile)
 queue_name = configreader.queue
 url_str = configreader.uri
 timetowait = configreader.timetowait
-
+verify = configreader.verify
 url = urlparse.urlparse(url_str)
 
 rabbitmq_password = url.password
 if rabbitmq_password is None:
     rabbitmq_password = "guest"
 
-hbuploader = uploader.HBUploader(httpsproxy=configreader.httpsproxy)
+hbuploader = uploader.HBUploader(httpsproxy=configreader.httpsproxy,
+                                 verify=verify)
 
 while True:
     try:

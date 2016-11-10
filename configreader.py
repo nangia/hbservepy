@@ -13,6 +13,7 @@ class ConfigReader(object):
     timetowait = 600
     configstore = {}
     config = SafeConfigParser()
+    verify = True
 
     def __init__(self, filename):
         self.config.read(filename)
@@ -29,6 +30,14 @@ class ConfigReader(object):
         else:
             self.httpsproxy = None
         logger.info("httpsproxy = %s" % self.httpsproxy)
+        if self.config.has_option('common', 'verify'):
+            verify = self.config.get('common', 'verify')
+            if verify.upper() == "FALSE":
+                self.verify = False
+            elif verify == "TRUE":
+                self.verify = True
+            else:
+                self.verify = verify
 
         for section in self.config.sections():
             if section != "common":

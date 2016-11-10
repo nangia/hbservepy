@@ -11,12 +11,13 @@ class HBUploader:
     heartbeaturl = baseurl + "heartbeat/"
     loginurl = baseurl + "rest-auth/login/"
 
-    def __init__(self, httpsproxy=None, timeout=30):
+    def __init__(self, httpsproxy=None, timeout=30, verify=True):
         if httpsproxy:
             self.proxies = {'https': httpsproxy}
         else:
             self.proxies = None
-        self.timeout = 30  # 30 seconds
+        self.timeout = timeout  # in seconds
+        self.verify = verify
 
     def login(self, userid, password):
         logger.info("Trying to login")
@@ -25,7 +26,7 @@ class HBUploader:
             "password": password
         }
         r = requests.post(self.loginurl, data=params, timeout=self.timeout,
-                          proxies=self.proxies)
+                          proxies=self.proxies, verify=self.verify)
         if r.status_code != 200:
             logger.error("Unable to login. Status=%d" % r.status_code)
             return None
@@ -43,7 +44,8 @@ class HBUploader:
 
         # send a get with file having a list of files
         r = requests.get(self.uploadurlinfo, params=params, headers=headers,
-                         timeout=self.timeout, proxies=self.proxies)
+                         timeout=self.timeout, proxies=self.proxies,
+                         verify=self.verify)
         logger.debug("Status code for /uploadurlinfo/ is %d" % r.status_code)
 
         if r.status_code != 200:
@@ -71,7 +73,8 @@ class HBUploader:
             # Now upload to S3
             files = {'file': open(file, 'rb')}
             r = requests.post(url, data=uploadinfo, files=files,
-                              timeout=self.timeout, proxies=self.proxies)
+                              timeout=self.timeout, proxies=self.proxies,
+                              verify=self.verify)
             logger.debug("upload status from S3 = %d" % r.status_code)
             if r.status_code != 204:
                 logger.error("uploadFile: Exiting as status code from S3 is not 204")
@@ -91,7 +94,7 @@ class HBUploader:
             logger.debug("params = %r" % str(params))
             r = requests.post(self.reportuploadurl, data=params,
                               headers=headers, timeout=self.timeout,
-                              proxies=self.proxies)
+                              proxies=self.proxies, verify=self.verify)
             logger.debug("upload status from post to /reports = %d" %
                          r.status_code)
             logger.debug("Return value = %s" % r.text)
@@ -113,7 +116,8 @@ class HBUploader:
         params = {}
         headers = {'Authorization': "Token %s" % authentication}
         r = requests.get(self.heartbeaturl, data=params, headers=headers,
-                         timeout=self.timeout, proxies=self.proxies)
+                         timeout=self.timeout, proxies=self.proxies,
+                         verify=self.verify)
         logger.debug("Output from heartbeat = %d" % r.status_code)
         logger.debug("Return value = %s" % r.text)
         if r.status_code == 200:

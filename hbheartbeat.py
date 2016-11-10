@@ -89,6 +89,7 @@ parser.add_argument('userid', help='Your HB userid')
 parser.add_argument('password', help='Your HB password')
 parser.add_argument('--httpsproxy', help="https proxy",
                     default=None)
+parser.add_argument('--verify', help="SSL verify", default=True)
 
 args = parser.parse_args()
 hb_userid = args.userid
@@ -96,8 +97,14 @@ hb_password = args.password
 interval = args.interval
 timetowait = args.timetowait
 httpsproxy = args.httpsproxy
+verify = args.verify
+if verify.upper() == "FALSE":
+    verify = False
 
-hbuploader = uploader.HBUploader(httpsproxy=httpsproxy)
+if verify.upper() == "TRUE":
+    verify = True
+
+hbuploader = uploader.HBUploader(httpsproxy=httpsproxy, verify=verify)
 
 while True:
     try:
