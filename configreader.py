@@ -32,9 +32,9 @@ class ConfigReader(object):
         logger.info("httpsproxy = %s" % self.httpsproxy)
         if self.config.has_option('common', 'verify'):
             verify = self.config.get('common', 'verify')
-            if verify.upper() == "FALSE":
+            if type(verify) == str and verify.upper() == "FALSE":
                 self.verify = False
-            elif verify == "TRUE":
+            elif type(verify) == str and verify.upper() == "TRUE":
                 self.verify = True
             else:
                 self.verify = verify
