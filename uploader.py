@@ -5,19 +5,19 @@ logger = logging.getLogger()
 
 
 class HBUploader:
-    baseurl = "https://www.healthbankapp.com/api/v1/"
-    uploadurlinfo = baseurl + "uploadurlinfo/"
-    reportuploadurl = baseurl + "reports/"
-    heartbeaturl = baseurl + "heartbeat/"
-    loginurl = baseurl + "rest-auth/login/"
-
-    def __init__(self, httpsproxy=None, timeout=30, verify=True):
+    def __init__(self, httpsproxy=None, timeout=30, verify=True,
+                 baseurl="https://www.healthbankapp.com/api/v1/"):
         if httpsproxy:
             self.proxies = {'https': httpsproxy}
         else:
             self.proxies = None
         self.timeout = timeout  # in seconds
         self.verify = verify
+        self.baseurl = baseurl
+        self.uploadurlinfo = baseurl + "uploadurlinfo/"
+        self.reportuploadurl = baseurl + "reports/"
+        self.heartbeaturl = baseurl + "heartbeat/"
+        self.loginurl = baseurl + "rest-auth/login/"
 
     def login(self, userid, password):
         logger.info("Trying to login")

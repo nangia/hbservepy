@@ -15,6 +15,12 @@ class ConfigReader(object):
     config = SafeConfigParser()
     verify = True
 
+    def getOption(self, section, option, default=None):
+        if self.config.has_option(section, option):
+            return self.config.get(section, option)
+        else:
+            return default
+
     def __init__(self, filename):
         self.config.read(filename)
         logger.info("Read configuration from %s" % filename)
@@ -38,7 +44,8 @@ class ConfigReader(object):
                 self.verify = True
             else:
                 self.verify = verify
-
+        self.baseurl = self.getOption('common', 'baseurl',
+                                      "https://www.healthbankapp.com/api/v1/")
         for section in self.config.sections():
             if section != "common":
                 self.configstore[section] = (

@@ -189,6 +189,7 @@ queue_name = configreader.queue
 url_str = configreader.uri
 timetowait = configreader.timetowait
 verify = configreader.verify
+baseurl = configreader.baseurl
 url = urlparse.urlparse(url_str)
 
 rabbitmq_password = url.password
@@ -196,7 +197,7 @@ if rabbitmq_password is None:
     rabbitmq_password = "guest"
 
 hbuploader = uploader.HBUploader(httpsproxy=configreader.httpsproxy,
-                                 verify=verify)
+                                 verify=verify, baseurl=baseurl)
 
 while True:
     try:
