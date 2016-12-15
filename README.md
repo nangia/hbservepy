@@ -19,7 +19,9 @@ Example hbserve.conf
 ------
 ```
 [global]
+# number of threads in threadpool for cheryrpy
 server.thread_pool: 1
+# port to run at
 server.socket_port: 9090
 log.screen: True
 log.access_file: "/Users/healthbank/Documents/vartman/healthbank/hbservepy/cherry.log"
