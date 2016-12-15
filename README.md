@@ -13,6 +13,40 @@ The software consists of 4 components:
 
 Of course, you need to run a valid RabbitMQ instance against which *hbserve.py* will queue up requets and *processmsg.py* will retrieve them and then upload to health bank servers.
 
+Configuration Files
+===============
+Example hbserve.conf
+------
+```
+[global]
+server.thread_pool: 1
+server.socket_port: 9090
+log.screen: True
+log.access_file: "/Users/healthbank/Documents/vartman/healthbank/hbservepy/cherry.log"
+log.error_file: "/Users/healthbank/Documents/vartman/healthbank/hbservepy/cherry.log"
+```
 
+Example processmsg.cfg
+----
+```
+[common]
+timetowait=600 # time to wait before starting process loop again in case an error happens
+uri=amqp://guest@localhost//  # Rabbitmq URL
+queue=report_queue  # queue name for Rabbitmq
+# baseurl=https://www.healthbankapp.com/api/v1/  # you should never have to change this. There for debugging purposes
+#verify=false # uncomment this to turn off SSL verification. Not recommended. 
+# verify=fullchain.pem # uncomment and provide certificate just in case you are using old python and can't update certificates
+# ucomment the following line if you want communication via proxy 
+#httpsproxy=127.0.0.1:8080 
 
-
+[fallback]
+# credentials for fallback lab userid
+username=919999999999
+password=password
+enabled=true
+[haematology]
+# specify credentials for each lab
+username=918888888888
+password=password
+enabled=true
+````
